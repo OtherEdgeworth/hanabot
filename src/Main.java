@@ -152,6 +152,14 @@ public class Main {
                 tile.hintedIdentity.value = (clue.value != 0 ? clue.value : tile.hintedIdentity.value);
                 tile.hintedIdentity.suit = (!clue.suit.isBlank() ? clue.suit : tile.hintedIdentity.suit);
             }
+            else //apply negative information to non-clued tiles
+            {
+                if (!clue.suit.isBlank())
+                    tile.negativeSuitInformation.add(clue.suit);
+                if (clue.value != 0)
+                    tile.negativeValueInformation.add(clue.value);
+                tile.updateIdentityFromNegativeInformation();
+            }
 
             // if this is the focussed tile, intuit more information
             if (isFocus)
@@ -163,17 +171,9 @@ public class Main {
                     if (clue.value == 2)
                         tile.information.add(new Clue(ClueType.TWO_SAVE, 2));
 
-                    //TODO: fix how critical saves are interpreted
-                    HashSet<Integer> criticalValues = new HashSet<>();
-                    HashSet<String> criticalSuits = new HashSet<>();
-                    ArrayList<Tile> criticalTiles = criticalTiles();
-                    for (Tile critTile : criticalTiles)
-                    {
-                        criticalValues.add(critTile.value);
-                        criticalSuits.add(critTile.suit);
-                    }
-                    if (criticalValues.contains(clue.value) || criticalSuits.contains(clue.suit))
-                        tile.information.add(new Clue(ClueType.CRITICAL_SAVE, clue.value, clue.suit));
+                    for (Tile critTile : criticalTiles())
+                        if (clue.matchesKnown(critTile))
+                            tile.information.add(new Clue(ClueType.CRITICAL_SAVE, clue.value, clue.suit));
                 }
 
                 // possible play clues

@@ -1,8 +1,13 @@
+import org.apache.commons.collections4.CollectionUtils;
+
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class Tile implements Comparable<Tile>
 {
-    public static String[] SUIT_INDEX = new String[] { "b", "g", "r", "y", "w" };
+    public static final String[] SUIT_INDEX = new String[] { "b", "g", "r", "y", "w" };
+    public static final Integer[] ALL_VALUES = new Integer[] { 1, 2, 3, 4, 5 };
 
     int value;
     String suit;
@@ -10,6 +15,8 @@ public class Tile implements Comparable<Tile>
     boolean inChopPosition = false;
     Clue hintedIdentity = new Clue(ClueType.NULL); //TODO: is a maybe - implement inverse clues (things the tile is not based off clues not given on it) to help calculate its value
     ArrayList<Clue> information = new ArrayList<>();
+    HashSet<String> negativeSuitInformation = new HashSet<>();
+    HashSet<Integer> negativeValueInformation = new HashSet<>();
 
     Tile(int value, String suit)
     {
@@ -43,7 +50,7 @@ public class Tile implements Comparable<Tile>
     @Override
     public boolean equals(Object o)
     {
-        if (o.getClass() == Tile.class)
+        if (o instanceof Tile)
             return equals((Tile)o);
         return super.equals(o);
     }
@@ -143,6 +150,14 @@ public class Tile implements Comparable<Tile>
                 else if (tile.value < hintedIdentity.value)
                     allSuitsCheck = false;
         return allSuitsCheck;
+    }
+
+    public void updateIdentityFromNegativeInformation()
+    {
+        if (hintedIdentity.suit.isBlank() && negativeSuitInformation.size() == 4)
+            hintedIdentity.suit = CollectionUtils.disjunction(List.of(SUIT_INDEX), negativeSuitInformation).iterator().next();
+        if (hintedIdentity.value == 0 && negativeValueInformation.size() == 4)
+            hintedIdentity.value = CollectionUtils.disjunction(List.of(ALL_VALUES), negativeValueInformation).iterator().next();
     }
 
     private String printHintedIdentity()

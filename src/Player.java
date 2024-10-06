@@ -27,7 +27,6 @@ public class Player
             possibleActions.add(new DiscardAction(chopPosition));
 
         // determine definitely playable tiles from information
-        //identify playable tiles
         ArrayList<Tile> playableTiles = new ArrayList<>();
         for (int i = 0; i < Main.inPlay.length; i++)
         {
@@ -42,7 +41,7 @@ public class Player
             if (!tile.isClued()) //if a tile hasn't been clued it isn't playable
                 continue;
 
-            //check if the identity of the tile has been fully clued, and if so, if its a playable tile
+            //check if the identity of the tile has been fully clued, and if so, if it's a playable tile
             if (!tile.hintedIdentity.suit.isBlank() && tile.hintedIdentity.value != 0)
             {
                 if (playableTiles.contains(tile))
@@ -102,11 +101,11 @@ public class Player
                 {
                     //confirm that the tile would be the focussed tile before giving the clue
                     Clue suitClue = new Clue(ClueType.PLAY, tile.suit);
-                    if (isFocus(Main.allPlayers[i].hand, tile, suitClue))
+                    if (isFocus(Main.allPlayers[i].hand, tile, suitClue) && isGoodTouch(Main.allPlayers[i].hand, i, suitClue))
                         possibleActions.add(new ClueAction(i, suitClue));
 
                     Clue valueClue = new Clue(ClueType.PLAY, tile.value);
-                    if (isFocus(Main.allPlayers[i].hand, tile, valueClue))
+                    if (isFocus(Main.allPlayers[i].hand, tile, valueClue) && isGoodTouch(Main.allPlayers[i].hand, i, suitClue))
                         possibleActions.add(new ClueAction(i, valueClue));
                 }
                 //TODO: add delayed play clues
@@ -308,6 +307,43 @@ public class Player
 
         //if no new on the chop, focus is the leftmost
         return newTiles.get(0).equals(tile);
+    }
+
+    private boolean isGoodTouch(Tile[] hand, int playerIndex, Clue clue)
+    {
+        ArrayList<Tile> touchedTiles = new ArrayList<>();
+        for (Tile t : hand)
+            if (clue.matches(t))
+                touchedTiles.add(t);
+
+        for (Tile t : touchedTiles)
+        {
+            //has a tile that would be touched been played?
+            for (Tile ip : Main.inPlay)
+                if (t.value <= ip.value && t.suit.equals(ip.suit))
+                    return false;
+
+            //has a tile that would be touched been clued in another player's hand
+            for (int i = 0; i < Main.allPlayers.length; i++)
+            {
+                for (Tile h : Main.allPlayers[i].hand)
+                {
+                    //same player's hand, re-touching previously clued tiles is okay, but touching multiple of the same tile in hand is not
+                    if (i == playerIndex)
+                        continue; //TODO: evaluate same hand tiles
+
+                    //your hand, you should not clue if it *might* violate GTP based on clues you have.
+                    if (i == self)
+                        continue; //TODO: evaluate own hand clues and if your clue could potentially break GTP
+
+                    //other hands, if the tile has been clued in one, it is not good touch
+                    if (h.equals(t) && h.isClued())
+                        return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static int matchedTiles(Clue clue, Tile[] hand)
