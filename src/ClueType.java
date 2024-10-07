@@ -5,5 +5,8 @@ public enum ClueType
     FIVE_SAVE,
     TWO_SAVE,
     CRITICAL_SAVE,
-    DELAYED_PLAY
+    DELAYED_PLAY;
+
+    public boolean isPlayClue() { return this == PLAY || this == DELAYED_PLAY; }
+    public boolean isSaveClue() { return this == FIVE_SAVE || this == TWO_SAVE || this == CRITICAL_SAVE; }
 }

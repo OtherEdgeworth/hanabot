@@ -1,10 +1,12 @@
-import java.util.Objects;
+import java.util.ArrayList;
 
 public class Clue
 {
     ClueType clueType;
     Integer value;
     String suit;
+    ArrayList<String> possibleSuits = new ArrayList<>();
+    ArrayList<Integer> possibleValues = new ArrayList<>();
 
     public Clue(ClueType clueType)
     {
@@ -58,9 +60,27 @@ public class Clue
         return clueType == o.clueType && value.equals(o.value) && suit.equals(o.suit);
     }
 
+    public boolean equals(Tile o)
+    {
+        if (value == 0 || suit.isBlank())
+            return false;
+        return (value == o.value && suit.equals(o.suit));
+    }
+
     public boolean matches(Tile tile) { return tile.value == value || tile.suit.equals(suit); }
-    public boolean matchesKnown(Tile tile) { return value.equals(tile.hintedIdentity.value) || tile.hintedIdentity.suit.equals(suit); }
+    public boolean matchesKnown(Tile tile) { return tile.hintedIdentity.value.equals(value) || tile.hintedIdentity.suit.equals(suit); }
 
     @Override
-    public String toString() { return clueType.name() + " clue '" + (value != 0 ? value : suit) + "'"; }
+    public String toString()
+    {
+        return ((possibleSuits.isEmpty() && possibleValues.isEmpty()) || value != 0 ||
+            !"".equals((suit)) ? toStringBrief() : toStringVerbose());
+    }
+    public String toStringBrief() { return clueType.name() + " clue '" + (value != 0 ? value : suit) + "'"; }
+    public String toStringVerbose()
+    {
+        return ("".equals(suit) && !possibleSuits.isEmpty() ? possibleSuits.toString() : suit) + " " +
+                (value != 0 && !possibleValues.isEmpty() ? possibleValues.toString() : value) + " " +  clueType.name() +
+                " clue";
+    }
 }

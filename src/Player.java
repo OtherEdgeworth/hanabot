@@ -9,12 +9,14 @@ public class Player
     Tile[] hand;
     ArrayList<Action> possibleActions;
     int self;
+    ChopMethod chopMethod;
 
-    public Player(int handSize, int self, boolean isHuman)
+    public Player(int handSize, int self, ChopMethod chopMethod, boolean isHuman)
     {
         this.handSize = handSize;
         hand = new Tile[handSize];
         this.self = self;
+        this.chopMethod = chopMethod;
         this.isHuman = isHuman;
     }
 
@@ -27,14 +29,8 @@ public class Player
             possibleActions.add(new DiscardAction(chopPosition));
 
         // determine definitely playable tiles from information
-        ArrayList<Tile> playableTiles = new ArrayList<>();
-        for (int i = 0; i < Main.inPlay.length; i++)
-        {
-            if (Main.inPlay[i] == null)
-                playableTiles.add(new Tile(1, Tile.suitByIndex(i)));
-            else if (Main.inPlay[i].value < 5)
-                playableTiles.add((new Tile(Main.inPlay[i].value + 1, Main.inPlay[i].suit)));
-        }
+        ArrayList<Tile> playableTiles = Main.playableTiles();
+
         for (int i = 0; i < handSize; i++)
         {
             Tile tile = hand[i];
@@ -199,19 +195,29 @@ public class Player
         Collections.sort(possibleActions);
     }
 
-    public void setChopToDefault()
+    public void updateChopPosition()
     {
-        for (chopPosition = handSize - 1; chopPosition >= -1; chopPosition--)
-        {
-            // Special case, you have no chopPosition; i.e. all tiles are clued
-            if (chopPosition == -1)
-                break;
+        int firstNonCluedChop = -1;
+        int firstUselessChop = -1;
 
-            // If the tile has been clued it cannot be in the chop position, if it's not been clued it is the chop
-            hand[chopPosition].inChopPosition = !hand[chopPosition].isClued() || hand[chopPosition].isUseless();
-            if (hand[chopPosition].inChopPosition)
-                break;
+        for (int i = handSize - 1; i >= 0; i--)
+        {
+            hand[i].inChopPosition = false;
+            if (hand[i].isUseless() && firstUselessChop == -1)
+                firstUselessChop = i;
+            if (!hand[i].isClued() && firstNonCluedChop == -1)
+                firstNonCluedChop = i;
         }
+
+        switch (chopMethod)
+        {
+            case NON_CLUED -> chopPosition = firstNonCluedChop;
+            case USELESS_MAY_BE_CHOP -> chopPosition = (Math.max(firstUselessChop, firstNonCluedChop));
+            case USELESS_PRIORITISED -> chopPosition = (firstUselessChop > -1 ? firstUselessChop : firstNonCluedChop);
+        }
+
+        if (chopPosition > -1)
+            hand[chopPosition].inChopPosition = true;
     }
 
     public void shiftTiles()
@@ -250,26 +256,55 @@ public class Player
             {
                 sb.append(" - I think it may be:\n");
                 for (Clue clue : tile.information)
-                    sb.append("   - a ").append(Tile.fullSuit(clue.suit)).append(!clue.suit.isBlank() ? " " : "").append(clue.value != 0 ? + clue.value : "one").append(" (to be ").append(clue.clueType.name().toLowerCase()).append("ed).\n");
+                    sb.append("   - a ").append(clue.toStringVerbose()).append("\n");
             }
         }
 
         return sb.toString();
     }
 
-    public void updateChopPosition()
+    public void updateTileClues()
     {
-        /*
-        for (int i = handSize-1; i >= 0; i--)
-            if (hand[i].inChopPosition && !hand[i].isClued())
-            {
-                chopPosition = i;
-                return;
-            }
-         */
+        for (Tile tile : hand)
+        {    //remove all clues if the tile is known to be useless
+            if (tile.isUseless())
+                tile.information = new ArrayList<>();
 
-        // chop position not found, reset to default
-        setChopToDefault();
+            ArrayList<Clue> cluesToRemove = new ArrayList<>();
+            ArrayList<Clue> cluesToAdd = new ArrayList<>();
+            for (Clue clue : tile.information)
+            {
+                //remove play clues if the tile has been played and is now useless
+                if (clue.clueType.isPlayClue() && new Tile(clue).isUseless())
+                    cluesToRemove.add(clue);
+
+                //make save clues play clues if the tile has become playable
+                if (clue.clueType.isSaveClue() && tile.isPlayable())
+                    clue.clueType = ClueType.PLAY;
+
+                //update possible suits
+                ArrayList<String> removeSuits = new ArrayList<>();
+                for (String suit : clue.possibleSuits)
+                {
+                    Tile checkPlayTile = Main.inPlay[Tile.suitIndex(suit)];
+                    if (checkPlayTile == null && clue.value == 1)
+                        removeSuits.add(suit);
+                    else if (checkPlayTile != null && checkPlayTile.value >= clue.value) //clue has been played already by someone else
+                        removeSuits.add(suit);
+                    else if (checkPlayTile != null && checkPlayTile.value == clue.value - 1) //clue is currently playable
+                    {
+                        removeSuits.add(suit);
+                        cluesToAdd.add(new Clue(ClueType.PLAY, clue.value, suit));
+                    }
+                }
+                clue.possibleSuits.removeAll(removeSuits);
+
+                if (clue.possibleSuits.size() == 1)
+                    clue.suit = clue.possibleSuits.remove(0);
+            }
+            tile.information.removeAll(cluesToRemove); //TODO figure out what is happening with this FUCKING BASTARD LINE OF CODE!!!!
+            tile.information.addAll(cluesToAdd);
+        }
     }
 
     public static boolean isFocus(Tile[] hand, Tile tile, Clue clue)
@@ -316,21 +351,30 @@ public class Player
             if (clue.matches(t))
                 touchedTiles.add(t);
 
+        // if the clue only touches one tile and it has alrady been clued on the clue value being given, this is a bad touch
+        // I might need to make a more sophisticated way of determining this (like re-hinting a previously clued tile that was not the focus to encourage playing it immediately)
+        if (touchedTiles.size() == 1 && touchedTiles.get(0).isClued() &&
+                (touchedTiles.get(0).hintedIdentity.suit.equals(clue.suit) || touchedTiles.get(0).hintedIdentity.value == clue.value))
+            return false;
+
         for (Tile t : touchedTiles)
         {
             //has a tile that would be touched been played?
             for (Tile ip : Main.inPlay)
-                if (t.value <= ip.value && t.suit.equals(ip.suit))
+                if (ip != null && t.value <= ip.value && t.suit.equals(ip.suit))
                     return false;
 
             //has a tile that would be touched been clued in another player's hand
             for (int i = 0; i < Main.allPlayers.length; i++)
             {
-                for (Tile h : Main.allPlayers[i].hand)
+                for (int j = 0; j < handSize; j++)
                 {
+                    Tile h = Main.allPlayers[i].hand[j];
                     //same player's hand, re-touching previously clued tiles is okay, but touching multiple of the same tile in hand is not
                     if (i == playerIndex)
-                        continue; //TODO: evaluate same hand tiles
+                        for (int k = j+1; k < handSize; k++)
+                            if (h.equals(Main.allPlayers[i].hand[k]))
+                                return false;
 
                     //your hand, you should not clue if it *might* violate GTP based on clues you have.
                     if (i == self)
@@ -360,7 +404,7 @@ public class Player
     {
         for (int i = 0; i < allPlayers.length; i++)
             for (Tile tile : allPlayers[i].hand)
-                if (tile.value == 2 && suit.equals(tile.suit) && (i != firstTwosPlayerIndex || !tile.inChopPosition))
+                if (tile != null && tile.value == 2 && suit.equals(tile.suit) && (i != firstTwosPlayerIndex || !tile.inChopPosition))
                     return false;
         return true;
     }
