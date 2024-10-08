@@ -41,14 +41,6 @@ public class Clue
         this.suit = clue.suit;
     }
 
-    @Override
-    public boolean equals(Object o)
-    {
-        if (o instanceof Clue)
-            return equals((Clue)o);
-        return super.equals(o);
-    }
-
     public boolean equals(Clue o)
     {
         if (clueType != ClueType.NULL && o.clueType != ClueType.NULL && clueType == o.clueType)
@@ -65,6 +57,24 @@ public class Clue
         if (value == 0 || suit.isBlank())
             return false;
         return (value == o.value && suit.equals(o.suit));
+    }
+
+    public boolean isPlayable()
+    {
+        for (Tile playableTile : Main.playableTiles())
+        {
+            if (!suit.isBlank())
+            {
+                if (this.equals(playableTile))
+                    return true;
+            }
+            else
+                for (String suit : Tile.SUIT_INDEX)
+                    if (this.equals(new Tile(value, suit)))
+                        return true;
+        }
+
+        return false;
     }
 
     public boolean matches(Tile tile) { return tile.value == value || tile.suit.equals(suit); }

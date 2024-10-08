@@ -82,7 +82,7 @@ public class Player
                     if (tile.value == 5)
                         possibleActions.add(new ClueAction(i, new Clue(ClueType.FIVE_SAVE, tile.value)));
                     // else if a 2, add a 2 save clue
-                    if (tile.value == 2 && noOtherMatchingTwos(Main.allPlayers, tile.suit, i))
+                    if (tile.value == 2 && noOtherMatchingTwos(Main.allPlayers, tile.suit, i) && !(new Tile(new Clue(ClueType.TWO_SAVE, tile.value, tile.suit))).isUseless())
                         possibleActions.add(new ClueAction(i, new Clue(ClueType.TWO_SAVE, tile.value)));
                     // else if a critical tile, add a critical save clue
                     if (criticalTiles.contains(tile))
@@ -135,7 +135,7 @@ public class Player
         return false;
     }
 
-    public void prioritiseActions()
+    public void prioritiseActions() //TODO: rethink priorities entirely. surely there is a better way hat what I am currently doing
     {
         boolean youShouldClue = true;
         for (Action action : possibleActions)
@@ -146,30 +146,31 @@ public class Player
             {
                 // prioritise a direct play clue over a save clue
                 if (clueAction.intendedClue.clueType == ClueType.CRITICAL_SAVE)
-                    action.priority = 20;
+                    action.priority = 2000;
                 else if (clueAction.intendedClue.clueType == ClueType.TWO_SAVE)
-                    action.priority = 30;
+                    action.priority = 3000;
                 else if (clueAction.intendedClue.clueType == ClueType.FIVE_SAVE)
-                    action.priority = 40;
+                    action.priority = 4000;
                 else if (clueAction.intendedClue.clueType == ClueType.PLAY)
-                    action.priority = 50;
+                    action.priority = 5000;
 
                 // increase the priority of clues only you can give
-                if ((clueAction.targetPlayer - self) % Main.allPlayers.length == 1)
-                    action.priority += 5;
+                int mod = Main.allPlayers.length;
+                if (((clueAction.targetPlayer - self) % mod + mod) % mod == 1)
+                    action.priority += 100;
 
                 // a colour clue is generally more specific than a number clue
                 if (!clueAction.intendedClue.suit.isBlank())
-                    action.priority += 5;
+                    action.priority += 1;
 
                 // a clue that gives information about more tiles is better (as long as we are obeying Good Touch Principle)
-                action.priority += matchedTiles(clueAction.intendedClue, Main.allPlayers[clueAction.targetPlayer].hand) - 1;
+                action.priority += 10 * (matchedTiles(clueAction.intendedClue, Main.allPlayers[clueAction.targetPlayer].hand) - 1);
 
             }
             else if (action instanceof PlayAction)
             {
-                action.priority = 61;
-                youShouldClue = false;
+                action.priority = 6000;
+                youShouldClue = Main.allPlayers.length == 2;
             }
         }
 
@@ -189,7 +190,7 @@ public class Player
                 if (youShouldClue) //if you should still clue, increase priority of all clue actions
                     for (Action action : possibleActions)
                         if (action instanceof ClueAction clueAction && clueAction.targetPlayer == i)
-                            clueAction.priority += 50;
+                            clueAction.priority += 5000;
             }
 
         Collections.sort(possibleActions);
@@ -244,7 +245,7 @@ public class Player
 
             sb.append("For the ").append(++i).append(i == 1 ? "st" : (i == 2 ? "nd" : (i == 3 ? "rd" : "th"))).append(" tile:\n");
             i--;
-            sb.append(" - I know that it is ");
+            sb.append(" - I know that it is "); //TODO: display what we know a tile is not (negative information - and clean up the "i know" display
             if (tile.hintedIdentity.value != 0)
                 sb.append("a");
             sb.append(Tile.fullSuit(tile.hintedIdentity.suit));
@@ -279,13 +280,22 @@ public class Player
                     cluesToRemove.add(clue);
 
                 //make save clues play clues if the tile has become playable
-                if (clue.clueType.isSaveClue() && tile.isPlayable())
+                if (clue.clueType.isSaveClue() && clue.isPlayable())
                     clue.clueType = ClueType.PLAY;
+
+                //remove save clues if you can see all instances of the tile it is trying to save
+                int numCanSee = Main.numCanSee(self, new Tile(clue));
+                if (clue.clueType.isSaveClue() && ((clue.value == 1 && numCanSee == 3) || (clue.value == 5 && numCanSee == 1) || (numCanSee == 2)))
+                    cluesToRemove.add(clue);
 
                 //update possible suits
                 ArrayList<String> removeSuits = new ArrayList<>();
                 for (String suit : clue.possibleSuits)
                 {
+                    //remove suits that we have negative information on
+                    removeSuits.addAll(tile.negativeSuitInformation);
+
+                    //check in play tiles
                     Tile checkPlayTile = Main.inPlay[Tile.suitIndex(suit)];
                     if (checkPlayTile == null && clue.value == 1)
                         removeSuits.add(suit);
@@ -302,7 +312,7 @@ public class Player
                 if (clue.possibleSuits.size() == 1)
                     clue.suit = clue.possibleSuits.remove(0);
             }
-            tile.information.removeAll(cluesToRemove); //TODO figure out what is happening with this FUCKING BASTARD LINE OF CODE!!!!
+            tile.information.removeAll(cluesToRemove);
             tile.information.addAll(cluesToAdd);
         }
     }
@@ -354,7 +364,7 @@ public class Player
         // if the clue only touches one tile and it has alrady been clued on the clue value being given, this is a bad touch
         // I might need to make a more sophisticated way of determining this (like re-hinting a previously clued tile that was not the focus to encourage playing it immediately)
         if (touchedTiles.size() == 1 && touchedTiles.get(0).isClued() &&
-                (touchedTiles.get(0).hintedIdentity.suit.equals(clue.suit) || touchedTiles.get(0).hintedIdentity.value == clue.value))
+                (touchedTiles.get(0).hintedIdentity.suit.equals(clue.suit) || touchedTiles.get(0).hintedIdentity.value.equals(clue.value)))
             return false;
 
         for (Tile t : touchedTiles)
@@ -376,9 +386,9 @@ public class Player
                             if (h.equals(Main.allPlayers[i].hand[k]))
                                 return false;
 
-                    //your hand, you should not clue if it *might* violate GTP based on clues you have.
-                    if (i == self)
-                        continue; //TODO: evaluate own hand clues and if your clue could potentially break GTP
+                    //your hand, you should not clue if it *might* violate GTP based on clues you have (unless this is a save clue)
+                    if (i == self && h.hintedIdentity.matches(t) && !clue.clueType.isSaveClue())
+                            return false;
 
                     //other hands, if the tile has been clued in one, it is not good touch
                     if (h.equals(t) && h.isClued())
@@ -394,8 +404,14 @@ public class Player
     {
         int matched = 0;
         for (Tile tile : hand)
+        {
             if (tile.value == clue.value || tile.suit.equals(clue.suit))
+            {
                 matched++;
+                if (tile.isPlayable())
+                    matched++;
+            }
+        }
 
         return matched;
     }

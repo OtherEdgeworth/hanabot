@@ -78,8 +78,16 @@ public class Tile implements Comparable<Tile>
 
     public boolean isPlayable()
     {
-        ArrayList<Tile> playableTiles = Main.playableTiles();
-        for (Tile playableTile : playableTiles)
+        for (Tile playableTile : Main.playableTiles())
+            if (this.equals(playableTile))
+                return true;
+
+        return false;
+    }
+
+    public boolean isKnownPlayable()
+    {
+        for (Tile playableTile : Main.playableTiles())
             if (hintedIdentity.equals(playableTile) && !negativeSuitInformation.contains(playableTile.suit) &&
                     !negativeValueInformation.contains(playableTile.value))
                 return true;
@@ -110,7 +118,7 @@ public class Tile implements Comparable<Tile>
         //value is known, but it or greater is played in all suits
         boolean suitWideValueCheck = true;
         for (Tile tile : Main.inPlay)
-            suitWideValueCheck &= (tile == null || tile.value >= hintedIdentity.value);
+            suitWideValueCheck &= !(tile == null || tile.value < hintedIdentity.value);
 
         return suitWideValueCheck;
     }

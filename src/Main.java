@@ -97,7 +97,7 @@ public class Main {
                 {
                     System.out.println(printGameInfo());
                     System.out.print("In play : " + print(inPlay));
-                    System.out.println(printForPlayer(allPlayers, 0));
+                    System.out.println(printForPlayer(allPlayers, -1));
                     if (!discarded.isEmpty())
                         System.out.println("Discard : " + print(discarded));
                     System.out.printf("%nWhat do you do? "); //put this in an input loop
@@ -135,6 +135,8 @@ public class Main {
                     allPlayers[playerTurn].executeFirstAction();
                 }
 
+                for (Player p : allPlayers)
+                    p.updateTileClues();
                 playerTurn = ++playerTurn % allPlayers.length;
                 System.out.println();
             }
@@ -231,7 +233,7 @@ public class Main {
                         for (String suit : Tile.SUIT_INDEX)
                         {
                             Tile possibleFive = new Tile(5, suit);
-                            possibleFive.hintedIdentity = new Clue(ClueType.NULL, 5, suit);
+                            //possibleFive.hintedIdentity = new Clue(ClueType.NULL, 5, suit);
                             if (!canSee(cluedPlayer, possibleFive) && !possibleFive.isPlayable())
                                 possibleSuits.add(suit);
                         }
@@ -249,7 +251,7 @@ public class Main {
                         for (String suit : Tile.SUIT_INDEX)
                         {
                             Tile possibleTwo = new Tile(2, suit);
-                            possibleTwo.hintedIdentity = new Clue(ClueType.NULL, 2, suit);
+                            //possibleTwo.hintedIdentity = new Clue(ClueType.NULL, 2, suit);
                             if (numCanSee(cluedPlayer, possibleTwo) < 2 && !possibleTwo.isUseless() && !possibleTwo.isPlayable())
                                 possibleSuits.add(suit);
                         }
@@ -277,9 +279,9 @@ public class Main {
                 if (clue.value != 0)
                     for (String suit : Tile.SUIT_INDEX)
                     {
-                        Tile checkPlayable = new Tile(clue.value, suit);
+                        Clue checkPlayable = new Clue(ClueType.PLAY, clue.value, suit);
                         if (checkPlayable.isPlayable())
-                            tile.information.add(new Clue(ClueType.PLAY, clue.value, suit));
+                            tile.information.add(checkPlayable);
                     }
 
                 //TODO: determine between immediate play and delayed play clues
@@ -350,8 +352,6 @@ public class Main {
         allPlayers[currentPlayer].shiftTiles();
         if (!deck.isEmpty())
             allPlayers[currentPlayer].deal(deck.remove(0));
-        for (Player player : allPlayers)
-            player.updateTileClues();
         allPlayers[currentPlayer].updateChopPosition();
     }
 
