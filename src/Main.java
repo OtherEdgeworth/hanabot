@@ -97,7 +97,7 @@ public class Main {
                 {
                     System.out.println(printGameInfo());
                     System.out.print("In play : " + print(inPlay));
-                    System.out.println(printForPlayer(allPlayers, -1));
+                    System.out.println(printForPlayer(allPlayers, 0));
                     if (!discarded.isEmpty())
                         System.out.println("Discard : " + print(discarded));
                     System.out.printf("%nWhat do you do? "); //put this in an input loop
@@ -219,7 +219,7 @@ public class Main {
                     tile.negativeSuitInformation.add(clue.suit);
                 if (clue.value != 0)
                     tile.negativeValueInformation.add(clue.value);
-                tile.updateIdentityFromNegativeInformation();
+
             }
 
             // if this is the focussed tile, intuit more information
@@ -287,6 +287,7 @@ public class Main {
                 //TODO: determine between immediate play and delayed play clues
                 //TODO: put prompt and finesse clues on relevant players (other than the clued one)
             }
+            tile.updateIdentityFromNegativeInformation();
         }
         allPlayers[cluedPlayer].updateChopPosition();
     }

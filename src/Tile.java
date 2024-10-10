@@ -74,6 +74,9 @@ public class Tile implements Comparable<Tile>
         return ConsoleColours.RESET;
     }
 
+    @Override
+    public int hashCode() { return 11 + 13 * value + (suit.isBlank() ? 0 : suit.hashCode()); }
+
     public boolean isClued() { return (hintedIdentity.value != 0 || !hintedIdentity.suit.isBlank() || !information.isEmpty()); }
 
     public boolean isPlayable()
@@ -179,6 +182,11 @@ public class Tile implements Comparable<Tile>
 
     public void updateIdentityFromNegativeInformation()
     {
+        if (!hintedIdentity.suit.isBlank())
+            negativeSuitInformation = new HashSet<>();
+        if (hintedIdentity.value != 0)
+            negativeValueInformation = new HashSet<>();
+
         if (hintedIdentity.suit.isBlank() && negativeSuitInformation.size() == 4)
             hintedIdentity.suit = CollectionUtils.disjunction(List.of(SUIT_INDEX), negativeSuitInformation).iterator().next();
         if (hintedIdentity.value == 0 && negativeValueInformation.size() == 4)
