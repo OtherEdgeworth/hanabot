@@ -77,6 +77,18 @@ public class Tile implements Comparable<Tile>
     @Override
     public int hashCode() { return 11 + 13 * value + (suit.isBlank() ? 0 : suit.hashCode()); }
 
+    public boolean hasOnlyPlayClues()
+    {
+        boolean onlyPlayClues = !information.isEmpty();
+        for (Clue clue : information)
+            if (clue.clueType != ClueType.PLAY)
+            {
+                onlyPlayClues = false;
+                break;
+            }
+        return onlyPlayClues;
+    }
+
     public boolean isClued() { return (hintedIdentity.value != 0 || !hintedIdentity.suit.isBlank() || !information.isEmpty()); }
 
     public boolean isPlayable()

@@ -1,3 +1,5 @@
+import org.apache.commons.collections4.CollectionUtils;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -5,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.SortedSet;
@@ -70,7 +73,7 @@ public class Main {
 
         Scanner readInput = new Scanner(System.in);
 
-        Player player = new Player(MAX_HAND_SIZE, 0, ChopMethod.USELESS_MAY_BE_CHOP, true);
+        Player player = new Player(MAX_HAND_SIZE, 0, ChopMethod.USELESS_MAY_BE_CHOP, false);
         Player bot = new Player(MAX_HAND_SIZE, 1, ChopMethod.USELESS_MAY_BE_CHOP, false);
         allPlayers = new Player[] {player, bot};
 
@@ -84,47 +87,72 @@ public class Main {
         int gameTurn = 0;
         int playerTurn = 0;
         int countdown = allPlayers.length;
+        boolean keepPlaying = true;
         try
         {
-            while (strikes < MAX_STRIKES && score < maxScore && countdown > 0)
+            while (strikes < MAX_STRIKES && score < maxScore && countdown > 0 && keepPlaying)
             {
                 //System.out.println("Player " +(playerTurn+1)+ "'s Turn:");
                 gameTurn++;
                 if (deck.isEmpty())
                     countdown--;
 
+                System.out.println(printGameInfo());
+                System.out.print("In play : " + print(inPlay));
+                System.out.println(printForPlayer(allPlayers, 2));
+                if (!discarded.isEmpty())
+                    System.out.println("Discard : " + print(discarded));
+
                 if (allPlayers[playerTurn].isHuman)
                 {
-                    System.out.println(printGameInfo());
-                    System.out.print("In play : " + print(inPlay));
-                    System.out.println(printForPlayer(allPlayers, 0));
-                    if (!discarded.isEmpty())
-                        System.out.println("Discard : " + print(discarded));
-                    System.out.printf("%nWhat do you do? "); //put this in an input loop
-
-                    /* input documentation
-                     * c,(2-5),[1-5bgryw]   - clue,player #,given clue
-                     * p,(1-HANDSIZE)       - play,position played from
-                     * d,(1-HANDSIZE)       -discard,position discarded from
-                     */
-                    String input = readInput.next();
-                    humanPlayerMoves.add(gameTurn + " : " + input);
-                    String[] splitInput = input.split(",");
-                    if ("x".equals(splitInput[0]))
-                        break;
-                    if ("c".equals(splitInput[0]))
+                    while (true)
                     {
-                        if (clues == 0)
+                        System.out.printf("%nWhat do you do? "); //put this in an input loop
+
+                        /* input documentation
+                         * c,(2-5),[1-5bgryw]   - clue,player #,given clue
+                         * p,(1-HANDSIZE)       - play,position played from
+                         * d,(1-HANDSIZE)       -discard,position discarded from
+                         */
+                        String input = readInput.next();
+                        String[] splitInput = input.split(",");
+                        try
                         {
-                            System.out.println("You have no clues left to give; you myst discard or play.");
-                            //continue;
+                            if ("t".equals(splitInput[0]))
+                            {
+                                System.out.println(player.thoughts());
+                                continue;
+                            }
+                            else if ("x".equals(splitInput[0]))
+                                keepPlaying = false;
+                            else if ("c".equals(splitInput[0]))
+                            {
+                                if (clues == 0)
+                                {
+                                    System.out.println("You have no clues left to give; you myst discard or play.");
+                                    continue;
+                                }
+                                clue(splitInput[1], splitInput[2]);
+                            }
+                            else if ("p".equals(splitInput[0]))
+                                play(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
+                            else if ("d".equals(splitInput[0]))
+                                discard(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
+                            else
+                            {
+                                System.out.println("No valid input detected, please try again");
+                                continue;
+                            }
                         }
-                        clue(splitInput[1], splitInput[2]);
+                        catch (ArrayIndexOutOfBoundsException aiobe)
+                        {
+                            System.out.println("I could not understand the input: " + input + ". Please try again.");
+                            continue;
+                        }
+
+                        humanPlayerMoves.add(gameTurn + " : " + input);
+                        break;
                     }
-                    else if ("p".equals(splitInput[0]))
-                        play(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
-                    else if ("d".equals(splitInput[0]))
-                        discard(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
                 }
                 else
                 {
@@ -145,7 +173,7 @@ public class Main {
                     strikes == MAX_STRIKES ? "3 strikes" : (
                             score == maxScore ? "attaining a perfrect score" : "the player ending it early"
                     )
-            ) + " with a final score of " + score + " points."));
+            )) + " with a final score of " + score + " points.");
         }
         catch (Exception e)
         {
@@ -178,9 +206,13 @@ public class Main {
             if (i == self)
                 continue;
             for (Tile tile : allPlayers[i].hand)
-                if (lookingFor.equals(tile))
+                if (tile != null && lookingFor.equals(tile))
                     numCanSee++;
         }
+
+        for (Tile tile : discarded.keySet())
+            if (tile.equals(lookingFor))
+                numCanSee++;
 
         return numCanSee;
     }
@@ -198,16 +230,20 @@ public class Main {
 
     public static void clue(int cluedPlayer, Clue clue)
     {
-        System.out.println();
-
         clues--;
+        ArrayList<Tile> touchedTiles = touchedTiles(allPlayers[cluedPlayer].hand, clue);
+        //TODO: rework this whole method.
+        //TODO: start with identifying the focus tile index, then figure out what clues to apply to it (including that it was the focus)
+        //TODO: then, figure out what clues (if any) should be applied to other touched tiles
+        //TODO: then, iterate the hand, skipping the focus tile, apply touch clue if a touched tile, and negative informaiton if not
+
         for (int i = 0; i < handSize; i++)
         {
             Player player = allPlayers[cluedPlayer];
             Tile tile = player.hand[i];
             boolean isFocus = Player.isFocus(player.hand, tile, clue);
 
-            //right now players just get an NULL clue on each tile that matches (identity)
+            // put a NULL clue on each tile that matches (identity)
             if (tile.value == clue.value || tile.suit.equals(clue.suit))
             {
                 tile.hintedIdentity.value = (clue.value != 0 ? clue.value : tile.hintedIdentity.value);
@@ -225,6 +261,7 @@ public class Main {
             // if this is the focussed tile, intuit more information
             if (isFocus)
             {
+                tile.information = new ArrayList<>();
                 if (tile.inChopPosition)
                 {
                     if (clue.value == 5)
@@ -233,7 +270,7 @@ public class Main {
                         for (String suit : Tile.SUIT_INDEX)
                         {
                             Tile possibleFive = new Tile(5, suit);
-                            //possibleFive.hintedIdentity = new Clue(ClueType.NULL, 5, suit);
+                            possibleFive.hintedIdentity = new Clue(ClueType.NULL, 5, suit);
                             if (!canSee(cluedPlayer, possibleFive) && !possibleFive.isPlayable())
                                 possibleSuits.add(suit);
                         }
@@ -251,7 +288,7 @@ public class Main {
                         for (String suit : Tile.SUIT_INDEX)
                         {
                             Tile possibleTwo = new Tile(2, suit);
-                            //possibleTwo.hintedIdentity = new Clue(ClueType.NULL, 2, suit);
+                            possibleTwo.hintedIdentity = new Clue(ClueType.NULL, 2, suit);
                             if (numCanSee(cluedPlayer, possibleTwo) < 2 && !possibleTwo.isUseless() && !possibleTwo.isPlayable())
                                 possibleSuits.add(suit);
                         }
@@ -265,7 +302,7 @@ public class Main {
                     }
 
                     for (Tile critTile : criticalTiles())
-                        if (clue.matches(critTile) && ((critTile.value != 1 && canSee(cluedPlayer, critTile)) || numCanSee(cluedPlayer, critTile) > 1))
+                        if (clue.matches(critTile) && ((critTile.value == 1 && numCanSee(cluedPlayer, critTile) < 3) || numCanSee(cluedPlayer, critTile) < 2))
                             tile.information.add(new Clue(ClueType.CRITICAL_SAVE, critTile.value, critTile.suit));
                 }
 
@@ -274,16 +311,38 @@ public class Main {
                 {
                     Tile inPlayTile  = inPlay[Tile.suitIndex(clue.suit)];
                     tile.information.add(new Clue(ClueType.PLAY, inPlayTile == null ? 1 : inPlayTile.value + 1, clue.suit));
+                    //TODO: infer things about non-focus tiles on a suit play clue (good touch, i.e. they must be of a value greater than what the play clue implies/what the tile is known to be)
                 }
 
                 if (clue.value != 0)
-                    for (String suit : Tile.SUIT_INDEX)
+                {
+                    ArrayList<String> otherSuits = new ArrayList<>();
+                    for (Player otherPlayer : allPlayers)
+                    {
+                        if (player.equals(otherPlayer))
+                            continue;
+                        for (Tile checkTile : otherPlayer.hand)
+                            if (checkTile.value == clue.value && checkTile.hasOnlyPlayClues())
+                                otherSuits.add(checkTile.suit);
+                    }
+                    ArrayList<String> checkSuits = (ArrayList<String>)CollectionUtils.disjunction(List.of(Tile.SUIT_INDEX), otherSuits);
+                    ArrayList<String> playSuits = new ArrayList<>();
+                    for (String suit : checkSuits)
                     {
                         Clue checkPlayable = new Clue(ClueType.PLAY, clue.value, suit);
                         if (checkPlayable.isPlayable())
-                            tile.information.add(checkPlayable);
+                            playSuits.add(suit);
                     }
+                    if (!playSuits.isEmpty())
+                    {
+                        Clue valuePlayClue = new Clue(ClueType.PLAY, clue.value);
+                        valuePlayClue.possibleSuits = playSuits;
 
+                        //add to all touched tiles, as the same clue should apply to each if good touch has been followed.
+                        for (Tile touchedTile : touchedTiles)
+                            touchedTile.information.add(valuePlayClue);
+                    }
+                }
                 //TODO: determine between immediate play and delayed play clues
                 //TODO: put prompt and finesse clues on relevant players (other than the clued one)
             }
@@ -463,6 +522,15 @@ public class Main {
         }
 
         return sb.toString();
+    }
+
+    public static ArrayList<Tile> touchedTiles(Tile[] hand, Clue clue)
+    {
+        ArrayList<Tile> touchedTiles = new ArrayList<>();
+        for (Tile t : hand)
+            if (clue.matches(t))
+                touchedTiles.add(t);
+        return touchedTiles;
     }
 
     private static float efficiency(int clues) { return 25f / clues; }

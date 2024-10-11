@@ -1,5 +1,8 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Player
 {
@@ -25,8 +28,33 @@ public class Player
         possibleActions = new ArrayList<>();
 
         //add discarding the chop, as that is always an option (provided you have a chop position)
-        if (chopPosition >= 0) //TODO: figure out what to do when no guaranteed plays, no chop position, and no clues available/possible to give (i.e. no "valid" actions)
+        if (chopPosition >= 0)
             possibleActions.add(new DiscardAction(chopPosition));
+        else if (Main.clues > 0)
+        {
+            //possibleActions.addAll(enumerateDesperateClueActions());
+            for (Player player : Main.allPlayers)
+            {
+                if (this.equals(player))
+                    continue;
+
+                ArrayList<String> suitsNotInHand = new ArrayList<>(List.of(Tile.SUIT_INDEX));
+                ArrayList<Integer> valuesNotInHand = new ArrayList<>(List.of(Tile.ALL_VALUES));
+                for (Tile tile : player.hand)
+                {
+                    /*
+                    suitsNotInHand.remove(tile.suit);
+                    valuesNotInHand.remove(tile.value);
+                     */
+                }
+            }
+            //TODO: finish this method, idea is: if you are clued an opening hand of all 5s or something, and you have no other legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there is not a given suit/value in their hand.
+            //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
+        }
+        else
+        {
+            //TODO: figure out what to do when you have no chop position and no clues are available to give
+        }
 
         // determine definitely playable tiles from information
         ArrayList<Tile> playableTiles = Main.playableTiles();
@@ -38,24 +66,11 @@ public class Player
                 continue;
 
             //check if the identity of the tile has been fully clued, and if so, if it's a playable tile
-            if (!tile.hintedIdentity.suit.isBlank() && tile.hintedIdentity.value != 0)
-            {
-                if (playableTiles.contains(tile))
-                    possibleActions.add(new PlayAction(i));
-            }
+            if (!tile.hintedIdentity.suit.isBlank() && tile.hintedIdentity.value != 0 && playableTiles.contains(tile))
+                possibleActions.add(new PlayAction(i));
             //otherwise, if tile not fully hinted, consider if it has only play clues
-            else
-            {
-                boolean onlyPlayClues = !tile.information.isEmpty();
-                for (Clue clue : tile.information)
-                    if (clue.clueType != ClueType.PLAY)
-                    {
-                        onlyPlayClues = false;
-                        break;
-                    }
-                if (onlyPlayClues)
-                    possibleActions.add(new PlayAction(i));
-            }
+            else if (tile.hasOnlyPlayClues())
+                possibleActions.add(new PlayAction(i));
         }
         //TODO: add support for other clues (prompt, finesse; check if delayed is now playable?)
 
@@ -101,7 +116,7 @@ public class Player
                         possibleActions.add(new ClueAction(i, suitClue));
 
                     Clue valueClue = new Clue(ClueType.PLAY, tile.value);
-                    if (isFocus(Main.allPlayers[i].hand, tile, valueClue) && isGoodTouch(Main.allPlayers[i].hand, i, suitClue))
+                    if (isFocus(Main.allPlayers[i].hand, tile, valueClue) && isGoodTouch(Main.allPlayers[i].hand, i, valueClue))
                         possibleActions.add(new ClueAction(i, valueClue));
                 }
                 //TODO: add delayed play clues
@@ -143,7 +158,7 @@ public class Player
      *  - How many tiles does the clue touch?
      *  - is this a colour clue? (used to break ties between equivalent colour and value clues)
      */
-    public void prioritiseActions() //TODO: rethink priorities entirely. surely there is a better way hat what I am currently doing
+    public void prioritiseActions()
     {
         for (Action action : possibleActions)
         {
@@ -191,6 +206,9 @@ public class Player
 
         for (int i = handSize - 1; i >= 0; i--)
         {
+            if (hand[i] == null)
+                continue;
+
             hand[i].inChopPosition = false;
             if (hand[i].isUseless() && firstUselessChop == -1)
                 firstUselessChop = i;
@@ -260,7 +278,11 @@ public class Player
     public void updateTileClues()
     {
         for (Tile tile : hand)
-        {    //remove all clues if the tile is known to be useless
+        {
+            if (tile == null)
+                continue;
+
+            //remove all clues if the tile is known to be useless
             if (tile.isUseless())
                 tile.information = new ArrayList<>();
 
@@ -269,7 +291,7 @@ public class Player
             for (Clue clue : tile.information)
             {
                 //remove play clues if the tile has been played and is now useless or if it is impossible (play clue with a suit/value we know the tile isn't)
-                if (clue.clueType.isPlayClue() &&
+                if (clue.clueType == ClueType.PLAY &&
                         (new Tile(clue).isUseless() || tile.negativeSuitInformation.contains(clue.suit) || tile.negativeValueInformation.contains(clue.value)))
                     cluesToRemove.add(clue);
 
@@ -282,26 +304,33 @@ public class Player
                 if (clue.clueType.isSaveClue() && ((clue.value == 1 && numCanSee == 3) || (clue.value == 5 && numCanSee == 1) || (numCanSee == 2)))
                     cluesToRemove.add(clue);
 
-                //update possible suits
-                ArrayList<String> removeSuits = new ArrayList<>();
+                //update possible suits - begin with suits that we have negative information on
+                ArrayList<String> removeSuits = new ArrayList<>(tile.negativeSuitInformation);
                 for (String suit : clue.possibleSuits)
                 {
-                    //remove suits that we have negative information on
-                    removeSuits.addAll(tile.negativeSuitInformation);
+                    Tile inPlay = Main.inPlay[Tile.suitIndex(suit)];
 
-                    //check in play tiles
-                    Tile checkPlayTile = Main.inPlay[Tile.suitIndex(suit)];
-                    if (checkPlayTile == null && clue.value == 1)
+                    //remove suit if it is complete
+                    if (inPlay != null && inPlay.value == 5)
                         removeSuits.add(suit);
-                    else if (checkPlayTile != null && checkPlayTile.value >= clue.value) //clue has been played already by someone else
+
+                    // for play clues - remove colours if they are no longer playable
+                    if (clue.clueType == ClueType.PLAY && clue.value > 0 && inPlay != null && clue.value <= inPlay.value)
                         removeSuits.add(suit);
-                    else if (checkPlayTile != null && checkPlayTile.value == clue.value - 1) //clue is currently playable
-                    {
-                        removeSuits.add(suit);
-                        cluesToAdd.add(new Clue(ClueType.PLAY, clue.value, suit));
-                    }
+
+                    //for save clues - remove colours if the tile (or greater) is in play, or you can see all copies of it
+                    // - remove the colour but add a play clue if the colour is playable (different to above, that handles known suit this handle possible)
+                    if (clue.clueType.isSaveClue())
+                        if (clue.value > 0 && inPlay != null && clue.value <= inPlay.value)
+                            removeSuits.add(suit);
+                        else if (clue.value > 0 && inPlay != null && clue.value == inPlay.value + 1)
+                        {
+                            removeSuits.add(suit);
+                            cluesToAdd.add(new Clue(ClueType.PLAY, clue.value, suit));
+                        }
                 }
                 clue.possibleSuits.removeAll(removeSuits);
+                cluesToAdd = (ArrayList<Clue>)cluesToAdd.stream().filter(c -> !tile.negativeSuitInformation.contains(c.suit)).collect(Collectors.toList());
 
                 if (clue.possibleSuits.size() == 1)
                     clue.suit = clue.possibleSuits.remove(0);
@@ -350,26 +379,25 @@ public class Player
 
     private boolean isGoodTouch(Tile[] hand, int playerIndex, Clue clue)
     {
-        ArrayList<Tile> touchedTiles = new ArrayList<>();
-        for (Tile t : hand)
-            if (clue.matches(t))
-                touchedTiles.add(t);
+        ArrayList<Tile> touchedTiles = Main.touchedTiles(hand, clue);
 
-        // if the clue only touches one tile and it has already been clued on the clue value being given, this is a bad touch
+        // if the clue only touches one tile and it's not playable right now and it has already been clued on the clue value being given, this is a bad touch
         // I might need to make a more sophisticated way of determining this (like re-hinting a previously clued tile that was not the focus to encourage playing it immediately)
-        if (touchedTiles.size() == 1 && touchedTiles.get(0).isClued() &&
+        /*
+        if (touchedTiles.size() == 1 && touchedTiles.get(0).isClued() && !touchedTiles.get(0).isPlayable() &&
                 (touchedTiles.get(0).hintedIdentity.suit.equals(clue.suit) || touchedTiles.get(0).hintedIdentity.value.equals(clue.value)))
             return false;
+         */
 
-        for (Tile t : touchedTiles)
+        for (Tile touchedTile : touchedTiles)
         {
             //save clues can violate good touch - thus for the purpose of this method they always count as good touch
-            if (!clue.clueType.isSaveClue())
+            if (clue.clueType.isSaveClue())
                 return true;
 
             //has a tile that would be touched already in play? if so, bad touch
             for (Tile ip : Main.inPlay)
-                if (ip != null && t.value <= ip.value && t.suit.equals(ip.suit))
+                if (ip != null && touchedTile.value <= ip.value && touchedTile.suit.equals(ip.suit))
                     return false;
 
             //has a tile that would be touched been clued in another player's hand?
@@ -377,29 +405,35 @@ public class Player
             {
                 for (int j = 0; j < handSize; j++)
                 {
-                    Tile h = Main.allPlayers[i].hand[j];
-                    //same player's hand, re-touching previously clued tiles is okay, but touching multiple of the same tile in hand is not
+                    Tile handTile = Main.allPlayers[i].hand[j];
                     if (i == playerIndex)
                     {
+                        //re-clueing the same tile with the same clue is also bad (for now, this will need to be made more compex to allow re-clueing to indicate what was thought to be a save clue is actually a play clue)
+                        if (isFocus(hand, touchedTile, clue) && ((!clue.suit.isBlank() && touchedTile.hintedIdentity.suit.equals(clue.suit)) ||
+                                (clue.value != 0 && touchedTile.hintedIdentity.value.equals(clue.value))))
+                            return false;
+
+                        //same player's hand touching multiple of the same tile in hand is bad
                         for (int k = j + 1; k < handSize; k++)
-                            if (h.equals(Main.allPlayers[i].hand[k]))
+                            if (handTile.equals(Main.allPlayers[i].hand[k]))
                                 return false;
                     }
 
                     //your hand, you should not clue if it *might* violate GTP based on clues you have
-                    //TODO: sort this out. we need to check the more concrete information, but also check clues (e.g. in seed 2 run first turn clue of green to the bot results in them hinting you on 1s despite the only clue they have is a 1 play.
                     else if (i == self)
                     {
-                        // quick chek of absolute clues
-                         && ((h.hintedIdentity.matches(t) && !h.negativeSuitInformation.contains(t.suit) &&
-                            !h.negativeValueInformation.contains(t.value)) || (h.)))
+                        // quick check of absolute clues
+                         if (isFocus(hand, touchedTile, clue) && handTile.hintedIdentity.matches(touchedTile) && !handTile.negativeSuitInformation.contains(touchedTile.suit) && !handTile.negativeValueInformation.contains(touchedTile.value))
+                             return false;
 
                         // iterate through interpreted  clues
-                        return false;
+                        for (Clue handClue : handTile.information)
+                            if (handClue.matches(touchedTile))
+                                return false;
                     }
 
                     //other hands, if the tile has been clued in one, it is not good touch
-                    else if (h.equals(t) && h.isClued())
+                    else if (handTile.equals(touchedTile) && handTile.isClued())
                         return false;
                 }
             }
@@ -430,8 +464,12 @@ public class Player
     {
         for (int i = 0; i < allPlayers.length; i++)
             for (Tile tile : allPlayers[i].hand)
+            {
+                if (i == self)
+                    continue;
                 if (tile != null && tile.value == 2 && suit.equals(tile.suit) && (i != firstTwosPlayerIndex || !tile.inChopPosition))
                     return false;
+            }
         return true;
     }
 }

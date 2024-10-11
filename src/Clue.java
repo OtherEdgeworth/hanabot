@@ -77,8 +77,7 @@ public class Clue
         return false;
     }
 
-    public boolean matches(Tile tile) { return tile.value == value || tile.suit.equals(suit); }
-    public boolean matchesKnown(Tile tile) { return tile.hintedIdentity.value.equals(value) || tile.hintedIdentity.suit.equals(suit); }
+    public boolean matches(Tile tile) { return (suit.isBlank() && tile.value == value) || (tile.suit.equals(suit) && value == 0) || (this.equals(tile)); }
 
     @Override
     public String toString()
