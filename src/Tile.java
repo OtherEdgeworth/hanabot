@@ -9,14 +9,16 @@ public class Tile implements Comparable<Tile>
     public static final String[] SUIT_INDEX = new String[] { "b", "g", "r", "y", "w" };
     public static final Integer[] ALL_VALUES = new Integer[] { 1, 2, 3, 4, 5 };
 
-    int value;
-    String suit;
     String consoleColour;
-    boolean inChopPosition = false;
+    Game game;
     Clue hintedIdentity = new Clue(ClueType.NULL);
+    boolean inChopPosition = false;
     ArrayList<Clue> information = new ArrayList<>();
     HashSet<String> negativeSuitInformation = new HashSet<>();
     HashSet<Integer> negativeValueInformation = new HashSet<>();
+    String suit;
+    int value;
+
 
     Tile(int value, String suit)
     {
@@ -57,12 +59,17 @@ public class Tile implements Comparable<Tile>
     @Override
     public boolean equals(Object o)
     {
-        if (o instanceof Tile)
-            return equals((Tile)o);
+        if (o instanceof Tile t)
+            return equals(t);
         return super.equals(o);
     }
 
-    public boolean equals(Tile o)  { return this.value == o.value && this.suit.equals(o.suit); }
+    public boolean equals(Tile o)
+    {
+        if (o == null)
+            return false;
+        return this.value == o.value && this.suit.equals(o.suit);
+    }
 
     public static String colourOf(String suit)
     {
@@ -89,54 +96,15 @@ public class Tile implements Comparable<Tile>
         return onlyPlayClues;
     }
 
+    public boolean hasPlayClue()
+    {
+        for (Clue clue : information)
+            if (clue.clueType == ClueType.PLAY)
+                return true;
+        return false;
+    }
+
     public boolean isClued() { return (hintedIdentity.value != 0 || !hintedIdentity.suit.isBlank() || !information.isEmpty()); }
-
-    public boolean isPlayable()
-    {
-        for (Tile playableTile : Main.playableTiles())
-            if (this.equals(playableTile))
-                return true;
-
-        return false;
-    }
-
-    public boolean isKnownPlayable()
-    {
-        for (Tile playableTile : Main.playableTiles())
-            if (hintedIdentity.equals(playableTile) && !negativeSuitInformation.contains(playableTile.suit) &&
-                    !negativeValueInformation.contains(playableTile.value))
-                return true;
-
-        return false;
-    }
-
-    public boolean isUseless()
-    {
-        //cannot know if a tile is useless if we know nothing about a tile
-        if (hintedIdentity.value == 0 && hintedIdentity.suit.isBlank())
-            return false;
-
-        //both suit and value are known
-        if (hintedIdentity.value != 0 && !hintedIdentity.suit.isBlank())
-            if (Main.inPlay[suitIndex()] == null)
-                return false;
-            else
-                return Main.inPlay[suitIndex()].value >= hintedIdentity.value;
-
-        //suit is known, but a 5 in suit has been played
-        if (!hintedIdentity.suit.isBlank())
-            if (Main.inPlay[suitIndex()] == null)
-                return false;
-            else
-                return Main.inPlay[suitIndex()].value == 5;
-
-        //value is known, but it or greater is played in all suits
-        boolean suitWideValueCheck = true;
-        for (Tile tile : Main.inPlay)
-            suitWideValueCheck &= !(tile == null || tile.value < hintedIdentity.value);
-
-        return suitWideValueCheck;
-    }
 
     public static String fullSuit(String suit)
     {

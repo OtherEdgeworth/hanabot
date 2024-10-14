@@ -8,5 +8,8 @@ public class PlayAction extends Action
     }
 
     @Override
-    public void execute(int self) { Main.play(self, targetTile); }
+    public String execute(Game game, Player executingPlayer)
+    {
+        return game.play(executingPlayer, targetTile);
+    }
 }

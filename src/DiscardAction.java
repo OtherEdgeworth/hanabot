@@ -5,5 +5,8 @@ public class DiscardAction extends Action
     public DiscardAction(int chopPosition) { this.chopPosition = chopPosition; }
 
     @Override
-    public void execute(int self) { Main.discard(self, chopPosition); }
+    public String execute(Game game, Player executingPlayer)
+    {
+        return game.discard(executingPlayer, chopPosition);
+    }
 }

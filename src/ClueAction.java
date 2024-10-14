@@ -10,10 +10,8 @@ public class ClueAction extends Action
     }
 
     @Override
-    public void execute(int self)
+    public String execute(Game game, Player executingPlayer)
     {
-        String clue = (intendedClue.value != 0 ? String.valueOf(intendedClue.value) : Tile.fullSuit(intendedClue.suit));
-        System.out.println("Player " + (self+1) + " clued you on " + clue + "s");
-        Main.clue(targetPlayer, new Clue(ClueType.NULL, intendedClue));
+        return game.clue(game.players[targetPlayer], new Clue(ClueType.NULL, intendedClue));
     }
 }

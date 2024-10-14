@@ -2,7 +2,7 @@ public abstract class Action implements Comparable<Action>
 {
     int priority;
 
-    public abstract void execute(int playerIndex);
+    public abstract String execute(Game game, Player executingPlayer);
 
     @Override
     public int compareTo(Action action) { return action.priority - this.priority; }
