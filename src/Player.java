@@ -149,11 +149,7 @@ public class Player
 
     public void interpretClue(Clue clue)
     {
-        int focusIndex;
-        for (focusIndex = 0; focusIndex < handSize; focusIndex++)
-            if (Player.isFocus(hand, hand[focusIndex], clue))
-                break;
-
+        int focusIndex = focusIndex(clue);
         Tile focusTile = hand[focusIndex];
         focusTile.hintedIdentity.suit = clue.suit.isBlank() ? focusTile.hintedIdentity.suit : clue.suit;
         focusTile.hintedIdentity.value = clue.value.equals(0) ? focusTile.hintedIdentity.value : clue.value;
@@ -185,7 +181,7 @@ public class Player
                         //skip suits that have playable tiles in other hands that already have play clues on them
                         boolean skipSuit = false;
                         for (Tile tile : game.players[i].hand)
-                            if (tile.suit.equals(suit) && game.isPlayable(tile) && tile.hasPlayClue())
+                            if (tile != null && tile.suit.equals(suit) && game.isPlayable(tile) && tile.hasPlayClue())
                                 skipSuit = true;
 
                         if (skipSuit)
@@ -293,6 +289,14 @@ public class Player
     }
 
     public String name() { return (name.isBlank() ? "Player " + index() : name); }
+
+    public int focusIndex(Clue clue)
+    {
+        for (int i = 0; i < handSize; i++)
+            if (Player.isFocus(hand, hand[i], clue))
+                return i;
+        return -1;
+    }
 
     public boolean hasPlayAction()
     {
@@ -595,7 +599,7 @@ public class Player
 
         //if multiple new and one is the chop, it is the focus
         if (chopIsNew)
-            return tile.inChopPosition;
+            return tile != null && tile.inChopPosition;
 
         //if no new on the chop, focus is the leftmost
         return newTiles.get(0).equals(tile);

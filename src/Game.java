@@ -126,6 +126,7 @@ public class Game
 
     boolean canSee(Player playersView, Tile lookingFor) { return numCanSee(playersView, lookingFor) > 0; }
 
+    //TODO: fix this return
     String clue(Player cluedPlayer, Clue clue)
     {
         // Reduce number of clues and have the clued player interpret the clue
@@ -133,7 +134,6 @@ public class Game
         cluedPlayer.interpretClue(clue);
 
         cluedPlayer.updateChopPosition();
-
         String result = "player 1 clued player 2 on clue suit/value";
         return "Need to fill in the clue response text still.";
     }

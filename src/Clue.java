@@ -40,6 +40,14 @@ public class Clue
         this.suit = clue.suit;
     }
 
+    public Clue(Clue clue)
+    {
+        this.clueType = clue.clueType;
+        this.possibleSuits = new ArrayList<>(clue.possibleSuits);
+        this.suit = clue.suit;
+        this.value = clue.value;
+    }
+
     @Override
     public boolean equals(Object o)
     {
