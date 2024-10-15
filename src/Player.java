@@ -215,8 +215,8 @@ public class Player
                 Clue twoSaveClue = new Clue(ClueType.TWO_SAVE, 2);
                 for (String suit : Tile.SUIT_INDEX)
                 {
-                    Tile possibleTwo = new Tile(new Clue(ClueType.NULL, 5, suit));
-                    if (game.numCanSee(this, possibleTwo) < 2 && !game.isPlayable(possibleTwo))
+                    Tile possibleTwo = new Tile(new Clue(ClueType.NULL, 2, suit));
+                    if (game.numCanSee(this, possibleTwo) < 2 && !game.isPlayable(possibleTwo) && !game.isUseless(possibleTwo))
                         twoSaveClue.possibleSuits.add(suit);
                 }
                 if (!twoSaveClue.possibleSuits.isEmpty()) //don't add a save clue if there are no possible suits for it to be
@@ -224,7 +224,7 @@ public class Player
             }
             else //critical saves
                 for (Tile critTile : game.criticalTiles())
-                    if (clue.matches(critTile) && ((critTile.value == 1 && game.numCanSee(this, critTile) < 3) || game.numCanSee(this, critTile) < 2))
+                    if (!game.isPlayable(critTile) && clue.matches(critTile) && ((critTile.value == 1 && game.numCanSee(this, critTile) < 3) || game.numCanSee(this, critTile) < 2))
                         focusClues.add(new Clue(ClueType.CRITICAL_SAVE, critTile.value, critTile.suit));
         }
 
