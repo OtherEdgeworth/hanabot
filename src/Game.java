@@ -137,6 +137,15 @@ public class Game
 
     boolean canSee(Player playersView, Tile lookingFor) { return numCanSee(playersView, lookingFor) > 0; }
     boolean canSeeInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor) > 0; }
+
+    boolean canSeeInPlay(Tile lookingFor)
+    {
+        for (Tile tile : inPlay)
+            if (tile != null && tile.suit.equals(lookingFor.suit) && lookingFor.value <= tile.value)
+                return true;
+        return false;
+    }
+
     boolean canSeePlayCluedInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor, List.of(ClueType.PLAY, ClueType.DELAYED_PLAY)) > 0; };
 
     //TODO: fix this return
@@ -237,17 +246,9 @@ public class Game
     int numCanSee(Player playersView, Tile lookingFor)
     {
         int numCanSee = 0;
-
-        for (Tile tile : inPlay)
-            if (tile != null && tile.suit.equals(lookingFor.suit) && lookingFor.value <= tile.value)
-                numCanSee++;
-
+        numCanSee += (canSeeInPlay(lookingFor) ? 1 : 0);
         numCanSee += numCanSeeInOtherHands(playersView, lookingFor);
-
-        for (Tile tile : discarded.keySet())
-            if (tile.equals(lookingFor))
-                numCanSee++;
-
+        numCanSee += numCanSeeInDiscard(lookingFor);
         return numCanSee;
     }
 

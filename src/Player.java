@@ -129,12 +129,12 @@ public class Player
                 }
 
                 List<Tile> filteredPlayableTiles = playableTiles.stream().filter(pt -> pt.suit.equals(tile.suit)).toList();
-                if (!filteredPlayableTiles.isEmpty())
+                if (!game.canSeeInPlay(tile) && !filteredPlayableTiles.isEmpty())
                 {
                     int nextPlayValue = filteredPlayableTiles.get(0).value;
                     boolean chainedPlayClues = true;
                     for (int k = nextPlayValue; k < tile.value; k++)
-                        if (!game.canSeePlayCluedInOtherHands(this, tile))
+                        if (!game.canSeePlayCluedInOtherHands(this, new Tile(k, tile.suit)))
                         {
                             chainedPlayClues = false;
                             break;
