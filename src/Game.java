@@ -18,7 +18,6 @@ public class Game
     public HashMap<Tile, Integer> discarded;
     public int handSize;
     public Tile[] inPlay;
-    public boolean isEarlyGame;
     public boolean keepPlaying;
     public int maxScore;
     public Player[] players;
@@ -40,7 +39,6 @@ public class Game
         discarded = new HashMap<>();
         gameTurn = 0;
         handSize = MAX_HAND_SIZE;
-        isEarlyGame = true;
         inPlay = new Tile[5];
         keepPlaying = true;
         maxScore = MAX_POSSIBLE_SCORE;
@@ -96,6 +94,7 @@ public class Game
         return result;
     }
 
+    public boolean isEarlyGame() { return discarded.keySet().isEmpty(); }
     public boolean isHumanPlayerTurn() { return players[playerTurn].isHuman; }
     public boolean isInProgress() { return strikes < MAX_STRIKES && score < maxScore && countdown > 0 && keepPlaying; }
 
