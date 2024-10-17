@@ -81,14 +81,14 @@ public class Player
         ArrayList<Tile> criticalTiles = game.criticalTiles();
 
         //iterate players to see which ones have playable tiles
-        for (int i = 0; i < game.players.length; i++)
+        for (int playerIndex = 0; playerIndex < game.players.length; playerIndex++)
         {
-            if (this == game.players[i] || game.clues == 0)
+            if (this == game.players[playerIndex] || game.clues == 0)
                 continue;
 
-            for (int j = 0; j < handSize; j++)
+            for (int handIndex = 0; handIndex < handSize; handIndex++)
             {
-                Tile tile = game.players[i].hand[j];
+                Tile tile = game.players[playerIndex].hand[handIndex];
                 if (tile == null)
                     continue;
 
@@ -97,17 +97,17 @@ public class Player
                 {
                     // if a 5, add a 5 save clue
                     if (tile.value == 5)
-                        possibleActions.add(new ClueAction(i, new Clue(ClueType.FIVE_SAVE, tile.value)));
+                        possibleActions.add(new ClueAction(playerIndex, new Clue(ClueType.FIVE_SAVE, tile.value)));
                     // else if a 2, add a 2 save clue
                     Tile possibleTwo = new Tile(new Clue(ClueType.TWO_SAVE, tile.value, tile.suit));
-                    if (tile.value == 2 && noOtherMatchingTwos(game.players, tile.suit, i) &&
+                    if (tile.value == 2 && noOtherMatchingTwos(game.players, tile.suit, playerIndex) &&
                             !game.isUseless(possibleTwo) && !game.isPlayable(possibleTwo))
-                        possibleActions.add(new ClueAction(i, new Clue(ClueType.TWO_SAVE, tile.value)));
+                        possibleActions.add(new ClueAction(playerIndex, new Clue(ClueType.TWO_SAVE, tile.value)));
                     // else if a critical tile, add a critical save clue
                     if (criticalTiles.contains(tile))
                     {
-                        possibleActions.add(new ClueAction(i, new Clue(ClueType.CRITICAL_SAVE, tile.suit)));
-                        possibleActions.add(new ClueAction(i, new Clue(ClueType.CRITICAL_SAVE, tile.value)));
+                        possibleActions.add(new ClueAction(playerIndex, new Clue(ClueType.CRITICAL_SAVE, tile.suit)));
+                        possibleActions.add(new ClueAction(playerIndex, new Clue(ClueType.CRITICAL_SAVE, tile.value)));
                     }
                 }
 
@@ -116,18 +116,45 @@ public class Player
                 {
                     //confirm that the tile would be the focussed tile before giving the clue
                     Clue suitClue = new Clue(ClueType.PLAY, tile.suit);
-                    boolean isTempoClue = isTempo(game.players[i].hand, tile, suitClue);
-                    if (isFocus(game.players[i].hand, tile, suitClue) && isGoodTouch(game.players[i].hand, i, suitClue)
+                    boolean isTempoClue = isTempo(game.players[playerIndex].hand, tile, suitClue);
+                    if (isFocus(game.players[playerIndex].hand, tile, suitClue) && isGoodTouch(game.players[playerIndex].hand, playerIndex, suitClue)
                             && (!isTempoClue || canGiveTempoClue))
-                        possibleActions.add(new ClueAction(i, suitClue, isTempoClue));
+                        possibleActions.add(new ClueAction(playerIndex, suitClue, isTempoClue));
 
                     Clue valueClue = new Clue(ClueType.PLAY, tile.value);
-                    isTempoClue = isTempo(game.players[i].hand, tile, valueClue);
-                    if (isFocus(game.players[i].hand, tile, valueClue) && isGoodTouch(game.players[i].hand, i, valueClue)
+                    isTempoClue = isTempo(game.players[playerIndex].hand, tile, valueClue);
+                    if (isFocus(game.players[playerIndex].hand, tile, valueClue) && isGoodTouch(game.players[playerIndex].hand, playerIndex, valueClue)
                             && (!isTempoClue|| canGiveTempoClue))
-                        possibleActions.add(new ClueAction(i, valueClue, isTempoClue));
+                        possibleActions.add(new ClueAction(playerIndex, valueClue, isTempoClue));
                 }
-                //TODO: add delayed play clues
+
+                List<Tile> filteredPlayableTiles = playableTiles.stream().filter(pt -> pt.suit.equals(tile.suit)).toList();
+                if (!filteredPlayableTiles.isEmpty())
+                {
+                    int nextPlayValue = filteredPlayableTiles.get(0).value;
+                    boolean chainedPlayClues = true;
+                    for (int k = nextPlayValue; k < tile.value; k++)
+                        if (!game.canSeePlayCluedInOtherHands(this, tile))
+                        {
+                            chainedPlayClues = false;
+                            break;
+                        }
+
+                    if (chainedPlayClues)
+                    {
+                        Clue suitClue = new Clue(ClueType.DELAYED_PLAY, tile.suit);
+                        boolean isTempoClue = isTempo(game.players[playerIndex].hand, tile, suitClue);
+                        if (isFocus(game.players[playerIndex].hand, tile, suitClue) && isGoodTouch(game.players[playerIndex].hand, playerIndex, suitClue)
+                                && (!isTempoClue || canGiveTempoClue) && !game.isPlayable(tile))
+                            possibleActions.add(new ClueAction(playerIndex, suitClue, isTempoClue));
+
+                        Clue valueClue = new Clue(ClueType.DELAYED_PLAY, tile.value);
+                        isTempoClue = isTempo(game.players[playerIndex].hand, tile, valueClue);
+                        if (isFocus(game.players[playerIndex].hand, tile, valueClue) && isGoodTouch(game.players[playerIndex].hand, playerIndex, valueClue)
+                                && (!isTempoClue || canGiveTempoClue) && !game.isPlayable(tile))
+                            possibleActions.add(new ClueAction(playerIndex, valueClue, isTempoClue));
+                    }
+                }
             }
         }
 
@@ -177,16 +204,36 @@ public class Player
         {
             Tile inPlayTile = game.inPlay[Tile.suitIndex(clue.suit)];
             int toPlayValue = (inPlayTile == null ? 1 : inPlayTile.value + 1);
-            if (focusTile.hintedIdentity.value.equals(toPlayValue) || (focusTile.hintedIdentity.value.equals(0) && !focusTile.negativeValueInformation.contains(toPlayValue)))
+
+            if ((focusTile.hintedIdentity.value.equals(toPlayValue) || (focusTile.hintedIdentity.value.equals(0) && !focusTile.negativeValueInformation.contains(toPlayValue)))
+                    && !game.canSeePlayCluedInOtherHands(this, new Tile(toPlayValue, clue.suit)))
                 focusClues.add(new Clue(ClueType.PLAY, toPlayValue, clue.suit));
-            //TODO: delayed play clues when we know the value is not playable right now but when there have been other tiles
-            //      in the suit been given play clues
+
+            for (int i = toPlayValue; i < 5; i++)
+            {
+                if (game.canSeePlayCluedInOtherHands(this, new Tile(i, clue.suit)))
+                {
+                    if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, clue.suit)))
+                        continue;
+                    else if (!game.allDiscarded(new Tile(i + 1, clue.suit)))
+                        focusClues.add(new Clue(ClueType.DELAYED_PLAY, i + 1, clue.suit));
+                    else
+                        break;
+                }
+                else
+                    break;
+            }
         }
         else //value clue - iterate the in play suits to determine which are playable
         {
             Clue playClue = new Clue(ClueType.PLAY, clue.value);
+            Clue delayClue = new Clue(ClueType.DELAYED_PLAY, clue.value);
             for (String suit : Tile.SUIT_INDEX)
-                if (game.isPlayable(new Tile(new Clue(ClueType.NULL, clue.value, suit))) && !focusTile.negativeSuitInformation.contains(suit))
+            {
+                if (focusTile.negativeSuitInformation.contains(suit))
+                    continue;
+
+                if (game.isPlayable(new Tile(new Clue(ClueType.NULL, clue.value, suit))))
                 {
                     for (int i = 0; i < game.players.length; i++)
                     {
@@ -205,6 +252,26 @@ public class Player
                         playClue.possibleSuits.add(suit);
                     }
                 }
+
+                Tile inPlayTile = game.inPlay[Tile.suitIndex(suit)];
+                int toPlayValue = (inPlayTile == null ? 1 : inPlayTile.value + 1);
+
+                for (int i = toPlayValue; i < clue.value; i++)
+                {
+                    if (game.canSeePlayCluedInOtherHands(this, new Tile(i, suit)))
+                    {
+                        if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, suit)))
+                            continue;
+                        else if (!game.allDiscarded(new Tile(i + 1, clue.suit)))
+                            delayClue.possibleSuits.add(suit);
+                        else
+                            break;
+                    }
+                    else
+                        break;
+                }
+            }
+
             if (playClue.possibleSuits.size() == 1)
             {
                 playClue.suit = playClue.possibleSuits.iterator().next();
@@ -212,7 +279,14 @@ public class Player
             }
             if (!playClue.suit.isBlank() || !playClue.possibleSuits.isEmpty())
                 focusClues.add(playClue);
-            //TODO: do this for delayed play clues
+
+            if (delayClue.possibleSuits.size() == 1)
+            {
+                delayClue.suit = delayClue.possibleSuits.iterator().next();
+                delayClue.possibleSuits = new HashSet<>();
+            }
+            if (! delayClue.suit.isBlank() || !delayClue.possibleSuits.isEmpty())
+                focusClues.add(delayClue);
         }
 
         //save clues

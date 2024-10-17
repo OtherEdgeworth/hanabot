@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 public class Game
@@ -74,8 +75,6 @@ public class Game
         for (int i = 0; i < MAX_HAND_SIZE; i++)
             for (Player player : this.players)
                 player.deal(deck.remove(0));
-        for (Player player : this.players)
-            player.updateChopPosition();
 
         // Initial housekeeping to determine each player's possible actions and their priority
         housekeeping();
@@ -126,8 +125,20 @@ public class Game
                 "\n  Current Strikes: " + (strikes == 2 ? ConsoleColours.RED + strikes + ConsoleColours.RESET : strikes);
     }
 
+    boolean allDiscarded(Tile lookingFor)
+    {
+        int numDiscarded = numCanSeeInDiscard(lookingFor);
+        return switch (lookingFor.value)
+        {
+            case 1 -> numDiscarded == 3;
+            case 5 -> numDiscarded == 1;
+            default -> numDiscarded == 2;
+        };
+    }
+
     boolean canSee(Player playersView, Tile lookingFor) { return numCanSee(playersView, lookingFor) > 0; }
     boolean canSeeInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor) > 0; }
+    boolean canSeePlayCluedInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor, List.of(ClueType.PLAY, ClueType.DELAYED_PLAY)) > 0; };
 
     //TODO: fix this return
     String clue(Player cluedPlayer, Clue clue)
@@ -135,7 +146,6 @@ public class Game
         // Reduce number of clues and have the clued player interpret the clue
         clues--;
         cluedPlayer.interpretClue(clue);
-
         cluedPlayer.updateChopPosition();
         String result = "player 1 clued player 2 on clue suit/value";
         return "Need to fill in the clue response text still.";
@@ -242,7 +252,19 @@ public class Game
         return numCanSee;
     }
 
-    int numCanSeeInOtherHands(Player playersView, Tile lookingFor)
+    int numCanSeeInDiscard(Tile lookingFor)
+    {
+        int numCanSee = 0;
+
+        for (Tile tile : discarded.keySet())
+            if (tile.equals(lookingFor))
+                numCanSee++;
+
+        return numCanSee;
+    }
+
+    int numCanSeeInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor, new ArrayList<>()); }
+    int numCanSeeInOtherHands(Player playersView, Tile lookingFor, List<ClueType> withClueTypes)
     {
         int numCanSee = 0;
 
@@ -251,7 +273,7 @@ public class Game
             if (playersView.equals(player))
                 continue;
             for (Tile tile : player.hand)
-                if (tile != null && lookingFor.equals(tile))
+                if (tile != null && (lookingFor.equals(tile) && (withClueTypes.isEmpty() || tile.hasAnyClueTypes(withClueTypes))))
                     numCanSee++;
         }
 
@@ -314,7 +336,6 @@ public class Game
                 touchedTiles.add(t);
         return touchedTiles;
     }
-
 
     /*
     private void clue(String otherPlayer, String clueValue)
