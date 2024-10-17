@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CriticalSaveQuestions
+public class CriticalSaveQuestionTests
 {
     @Test
     public void criticalSaveQ1()
@@ -25,14 +25,17 @@ public class CriticalSaveQuestions
         bob.hand = Tile.hand(null, null, Tile.g3, bt4, bt5);
         bob.updateChopPosition();
 
-        Tile ct2 = new Tile(new Clue(ClueType.PLAY, 2, "r"));
+        Tile ct2 = new Tile(2, "r");
+        ct2.hintedIdentity.suit = "r";
+        Clue cc2 = new Clue(ClueType.PLAY, 2, "r");
+        ct2.information.add(cc2);
         cathy.hand = Tile.hand(Tile.w4, ct2, Tile.y1, Tile.y2, Tile.y4);
 
         // Take action - Alice clues Bob on 3
         new ClueAction(1, new Clue(ClueType.NULL, 3)).execute(game, alice);
 
         // Q: For Bob, is this a Play or a Save? What not does Bob make? - A: y 3 PLAY, r 3 DELAYED_PLAY, g 3 CRITICAL_SAVE
-        Assertions.assertEquals(3, bob.hand[2].information.size()); //TODO: delay clues
+        Assertions.assertEquals(3, bob.hand[2].information.size());
         Assertions.assertEquals(0, bob.hand[3].information.size());
         Assertions.assertEquals(1, bob.hand[4].information.size());
 
@@ -45,7 +48,7 @@ public class CriticalSaveQuestions
                 playClue = clue;
             else if (clue.clueType == ClueType.DELAYED_PLAY)
                 delayClue = clue;
-            else if (clue.clueType == ClueType.TWO_SAVE)
+            else if (clue.clueType == ClueType.CRITICAL_SAVE)
                 saveClue = clue;
         }
 
@@ -60,9 +63,9 @@ public class CriticalSaveQuestions
         Assertions.assertEquals(3, delayClue.value);
 
         Assertions.assertNotNull(saveClue);
-        Assertions.assertEquals(ClueType.TWO_SAVE, saveClue.clueType);
+        Assertions.assertEquals(ClueType.CRITICAL_SAVE, saveClue.clueType);
         Assertions.assertEquals("g", saveClue.suit);
-        Assertions.assertEquals(2, saveClue.value);
+        Assertions.assertEquals(3, saveClue.value);
     }
 
     @Test

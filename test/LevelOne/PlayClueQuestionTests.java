@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class PlayClueQuestions
+public class PlayClueQuestionTests
 {
     @Test
     public void playQ1()

@@ -135,6 +135,23 @@ public class Tile implements Comparable<Tile>
 
     public boolean isClued() { return (hintedIdentity.value != 0 || !hintedIdentity.suit.isBlank() || !information.isEmpty()); }
 
+    public boolean matches(Tile tile)
+    {
+        if (hintedIdentity.value == 0 && hintedIdentity.suit.isBlank())
+            return false;
+
+        boolean valueMatch = (hintedIdentity.value == 0 || hintedIdentity.value == tile.value) && !this.negativeValueInformation.contains(tile.value);
+        boolean clueContainsSuit = false;
+        for (Clue clue : this.information)
+            if (clue.possibleSuits.contains(tile.suit))
+            {
+                clueContainsSuit = true;
+                break;
+            }
+        boolean suitMatch = hintedIdentity.suit.equals(tile.suit) || (hintedIdentity.suit.isBlank() && clueContainsSuit);
+        return valueMatch || suitMatch;
+    }
+
     public static String fullSuit(String suit)
     {
         if ("b".equals(suit)) return "blue";

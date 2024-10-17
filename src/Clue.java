@@ -40,6 +40,13 @@ public class Clue
         this.suit = clue.suit;
     }
 
+    public Clue(ClueType clueType, Tile tile)
+    {
+        this.clueType = clueType;
+        this.value = tile.value;
+        this.suit = tile.suit;
+    }
+
     public Clue(Clue clue)
     {
         this.clueType = clue.clueType;

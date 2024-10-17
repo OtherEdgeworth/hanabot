@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.List;
 
-public class SavePrincipleQuestions
+public class SavePrincipleQuestionTests
 {
     @Test
     public void spQ1()

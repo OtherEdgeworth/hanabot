@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class TwoSaveQuestions
+public class TwoSaveQuestionTests
 {
     @Test
     public void twoSaveQ1()
@@ -22,6 +22,8 @@ public class TwoSaveQuestions
 
         Tile ct2 = new Tile(1, "y");
         ct2.hintedIdentity.value = 1;
+        Clue cc2 = new Clue(ClueType.PLAY, 1, "y");
+        ct2.information.add(cc2);
         cathy.hand = Tile.hand(Tile.y5, ct2, Tile.r3, Tile.r2, Tile.b2);
         cathy.updateChopPosition();
 
@@ -29,7 +31,7 @@ public class TwoSaveQuestions
         new ClueAction(1, new Clue(ClueType.NULL, 2)).execute(game, alice);
 
         // Q: What notes does Bob make? - A: b 2 PLAY, y 2 DELAYED_PLAY
-        Assertions.assertEquals(2, bob.hand[3].information.size()); //TODO: delay clues
+        Assertions.assertEquals(2, bob.hand[3].information.size());
 
         boolean playFirst = (bob.hand[3].information.get(0).clueType == ClueType.PLAY);
         Clue playClue = bob.hand[3].information.get(playFirst ? 0 : 1);
@@ -73,12 +75,12 @@ public class TwoSaveQuestions
         // Q: For Bob, is this a Play Clue or a Save Clue? What note does Bob make?
         // A: Play clue(s); y 2 PLAY, [b, g, r] 2 DELAYED_PLAY, [b, g, r] 2 SAVE
         Assertions.assertEquals(1, bob.hand[0].information.size());
-        Assertions.assertEquals(3, bob.hand[4].information.size()); //TODO: delay clues
+        Assertions.assertEquals(3, bob.hand[4].information.size());
 
         Clue playClue = null;
         Clue delayClue = null;
         Clue saveClue = null;
-        for (Clue clue : bob.hand[3].information)
+        for (Clue clue : bob.hand[4].information)
         {
             if (clue.clueType == ClueType.PLAY)
                 playClue = clue;

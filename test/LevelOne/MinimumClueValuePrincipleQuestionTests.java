@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class MinimumClueValuePrincipleQuestions
+public class MinimumClueValuePrincipleQuestionTests
 {
     @Test
     public void mcvpQ1()

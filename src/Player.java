@@ -205,13 +205,16 @@ public class Player
             Tile inPlayTile = game.inPlay[Tile.suitIndex(clue.suit)];
             int toPlayValue = (inPlayTile == null ? 1 : inPlayTile.value + 1);
 
+            Tile checkTile = new Tile(toPlayValue, clue.suit);
             if ((focusTile.hintedIdentity.value.equals(toPlayValue) || (focusTile.hintedIdentity.value.equals(0) && !focusTile.negativeValueInformation.contains(toPlayValue)))
-                    && !game.canSeePlayCluedInOtherHands(this, new Tile(toPlayValue, clue.suit)))
+                    && !game.canSeePlayCluedInOtherHands(this, checkTile)
+                    && !mightSeePlayClueInOwnHand(checkTile, focusIndex))
                 focusClues.add(new Clue(ClueType.PLAY, toPlayValue, clue.suit));
 
             for (int i = toPlayValue; i < 5; i++)
             {
-                if (game.canSeePlayCluedInOtherHands(this, new Tile(i, clue.suit)))
+                checkTile = new Tile(i, clue.suit);
+                if (game.canSeePlayCluedInOtherHands(this, checkTile) || mightSeePlayClueInOwnHand(checkTile, focusIndex))
                 {
                     if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, clue.suit)))
                         continue;
@@ -258,7 +261,10 @@ public class Player
 
                 for (int i = toPlayValue; i < clue.value; i++)
                 {
-                    if (game.canSeePlayCluedInOtherHands(this, new Tile(i, suit)))
+                    Tile checkTile = new Tile(i, suit);
+                    if (mightSeePlayClueInOwnHand(checkTile, focusIndex))
+                        delayClue.possibleSuits.add(suit);
+                    else if (game.canSeePlayCluedInOtherHands(this, checkTile))
                     {
                         if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, suit)))
                             continue;
@@ -328,7 +334,7 @@ public class Player
             }
             else //critical saves
                 for (Tile critTile : game.criticalTiles())
-                    if (!game.isPlayable(critTile) && clue.matches(critTile) && ((critTile.value == 1 && game.numCanSee(this, critTile) < 3) || game.numCanSee(this, critTile) < 2))
+                    if (!game.isPlayable(critTile) && clue.matches(critTile) && !focusClues.contains(new Clue(ClueType.DELAYED_PLAY, critTile)) && ((critTile.value == 1 && game.numCanSee(this, critTile) < 3) || game.numCanSee(this, critTile) < 2))
                         focusClues.add(new Clue(ClueType.CRITICAL_SAVE, critTile.value, critTile.suit));
         }
 
@@ -798,6 +804,19 @@ public class Player
                     matched++;
 
         return matched;
+    }
+
+    private boolean mightSeePlayClueInOwnHand(Tile checkTile, int skipTile)
+    {
+        for (int i = 0; i < handSize; i++)
+        {
+            if (i == skipTile)
+                continue;
+            Tile tile = hand[i];
+            if (tile != null && tile.matches(checkTile))
+                return true;
+        }
+        return false;
     }
 
     private boolean noOtherMatchingTwos(Player[] allPlayers, String suit, int firstTwosPlayerIndex)

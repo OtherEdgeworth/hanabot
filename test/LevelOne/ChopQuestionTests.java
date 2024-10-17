@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ChopQuestions
+public class ChopQuestionTests
 {
     @Test
     public void chopQ1()

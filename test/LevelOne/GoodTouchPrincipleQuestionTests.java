@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class GoodTouchPrincipleQuestions
+public class GoodTouchPrincipleQuestionTests
 {
     @Test
     public void gtpQ1()

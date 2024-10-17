@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class DelayedPlayClueQuestions
+public class DelayedPlayClueQuestionTests
 {
     @Test
     public void delayPlayQ1()
@@ -122,7 +122,7 @@ public class DelayedPlayClueQuestions
 
         // Q: What note does Bob make? For Bob, is this a Delayed Play Clue? What action should Bob take?
         // A: [r, w] 4 PLAY, [b, y] 4 DELAYED_PLAY; Maybe; Discard
-        Assertions.assertEquals(2, bob.hand[0].information.size()); //TODO: delay clues
+        Assertions.assertEquals(2, bob.hand[0].information.size());
         boolean playFirst = (bob.hand[0].information.get(0).clueType == ClueType.PLAY);
         Clue playClue = bob.hand[0].information.get(playFirst ? 0 : 1);
         Clue delayClue = bob.hand[0].information.get(playFirst ? 1 : 0);

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ClueInterpretationQuestions
+public class ClueInterpretationQuestionTests
 {
     @Test
     public void interpretationQ1()
@@ -100,10 +100,10 @@ public class ClueInterpretationQuestions
         new ClueAction(1, clue).execute(game, alice);
 
         // Q: Which slot is focussed? For Bob, is this a Play or a Save? What card not does Bob make?
-        // A: Alot 2 (index 1) (new + chop) (checked above); Play; r 3 DELAYED_PLAY
+        // A: Slot 2 (index 1) (new + chop) (checked above); Play; r 3 DELAYED_PLAY
         Assertions.assertEquals(1, bob.hand[2].information.size());
         Clue bobClue = bob.hand[2].information.get(0);
-        Assertions.assertEquals(ClueType.DELAYED_PLAY, bobClue.clueType); //TODO: delay clues
+        Assertions.assertEquals(ClueType.DELAYED_PLAY, bobClue.clueType);
         Assertions.assertEquals("r", bobClue.suit);
         Assertions.assertEquals(3, bobClue.value);
     }
@@ -116,6 +116,8 @@ public class ClueInterpretationQuestions
         Player bob = new Player();
         Game game = new Game(0, alice, bob);
         game.inPlay = Tile.hand(Tile.b1, Tile.g2, Tile.r5, null, Tile.w2);
+        game.discarded.put(Tile.b3, 1);
+        game.discarded.put(Tile.b4, 1);
 
         // Setup hands
         alice.hand = new Tile[alice.handSize];
