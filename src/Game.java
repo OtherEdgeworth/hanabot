@@ -17,6 +17,7 @@ public class Game
     public HashMap<Tile, Integer> discarded;
     public int handSize;
     public Tile[] inPlay;
+    public boolean isEarlyGame;
     public boolean keepPlaying;
     public int maxScore;
     public Player[] players;
@@ -38,6 +39,7 @@ public class Game
         discarded = new HashMap<>();
         gameTurn = 0;
         handSize = MAX_HAND_SIZE;
+        isEarlyGame = true;
         inPlay = new Tile[5];
         keepPlaying = true;
         maxScore = MAX_POSSIBLE_SCORE;
@@ -125,6 +127,7 @@ public class Game
     }
 
     boolean canSee(Player playersView, Tile lookingFor) { return numCanSee(playersView, lookingFor) > 0; }
+    boolean canSeeInOtherHands(Player playersView, Tile lookingFor) { return numCanSeeInOtherHands(playersView, lookingFor) > 0; }
 
     //TODO: fix this return
     String clue(Player cluedPlayer, Clue clue)
@@ -230,6 +233,19 @@ public class Game
             if (tile != null && tile.suit.equals(lookingFor.suit) && lookingFor.value <= tile.value)
                 numCanSee++;
 
+        numCanSee += numCanSeeInOtherHands(playersView, lookingFor);
+
+        for (Tile tile : discarded.keySet())
+            if (tile.equals(lookingFor))
+                numCanSee++;
+
+        return numCanSee;
+    }
+
+    int numCanSeeInOtherHands(Player playersView, Tile lookingFor)
+    {
+        int numCanSee = 0;
+
         for (Player player : players)
         {
             if (playersView.equals(player))
@@ -238,10 +254,6 @@ public class Game
                 if (tile != null && lookingFor.equals(tile))
                     numCanSee++;
         }
-
-        for (Tile tile : discarded.keySet())
-            if (tile.equals(lookingFor))
-                numCanSee++;
 
         return numCanSee;
     }

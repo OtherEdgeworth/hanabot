@@ -1,9 +1,9 @@
-import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Clue
 {
     ClueType clueType;
-    ArrayList<String> possibleSuits = new ArrayList<>();
+    HashSet<String> possibleSuits = new HashSet<>();
     String suit;
     Integer value;
 
@@ -43,7 +43,7 @@ public class Clue
     public Clue(Clue clue)
     {
         this.clueType = clue.clueType;
-        this.possibleSuits = new ArrayList<>(clue.possibleSuits);
+        this.possibleSuits = new HashSet<>(clue.possibleSuits);
         this.suit = clue.suit;
         this.value = clue.value;
     }

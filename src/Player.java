@@ -48,36 +48,15 @@ public class Player
 
     public void enumerateActions()
     {
+        boolean canGiveTempoClue = false;
         possibleActions = new ArrayList<>();
 
         //add discarding the chop, as that is always an option (provided you have a chop position)
         if (chopPosition >= 0)
             possibleActions.add(new DiscardAction(chopPosition));
-        else if (game.clues > 0)
-        {
-            //possibleActions.addAll(enumerateDesperateClueActions());
-            for (Player player : game.players)
-            {
-                if (this.equals(player))
-                    continue;
-
-                ArrayList<String> suitsNotInHand = new ArrayList<>(List.of(Tile.SUIT_INDEX));
-                ArrayList<Integer> valuesNotInHand = new ArrayList<>(List.of(Tile.ALL_VALUES));
-                for (Tile tile : player.hand)
-                {
-                    /*
-                    suitsNotInHand.remove(tile.suit);
-                    valuesNotInHand.remove(tile.value);
-                     */
-                }
-            }
-            //TODO: finish this method, idea is: if you are clued an opening hand of all 5s or something, and you have no other legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there is not a given suit/value in their hand.
-            //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
-        }
         else
-        {
-            //TODO: figure out what to do when you have no chop position and no clues are available to give
-        }
+            canGiveTempoClue = true;
+
 
         // determine definitely playable tiles from information
         ArrayList<Tile> playableTiles = game.playableTiles();
@@ -120,7 +99,9 @@ public class Player
                     if (tile.value == 5)
                         possibleActions.add(new ClueAction(i, new Clue(ClueType.FIVE_SAVE, tile.value)));
                     // else if a 2, add a 2 save clue
-                    if (tile.value == 2 && noOtherMatchingTwos(game.players, tile.suit, i) && !game.isUseless((new Tile(new Clue(ClueType.TWO_SAVE, tile.value, tile.suit)))))
+                    Tile possibleTwo = new Tile(new Clue(ClueType.TWO_SAVE, tile.value, tile.suit));
+                    if (tile.value == 2 && noOtherMatchingTwos(game.players, tile.suit, i) &&
+                            !game.isUseless(possibleTwo) && !game.isPlayable(possibleTwo))
                         possibleActions.add(new ClueAction(i, new Clue(ClueType.TWO_SAVE, tile.value)));
                     // else if a critical tile, add a critical save clue
                     if (criticalTiles.contains(tile))
@@ -135,16 +116,50 @@ public class Player
                 {
                     //confirm that the tile would be the focussed tile before giving the clue
                     Clue suitClue = new Clue(ClueType.PLAY, tile.suit);
-                    if (isFocus(game.players[i].hand, tile, suitClue) && isGoodTouch(game.players[i].hand, i, suitClue))
-                        possibleActions.add(new ClueAction(i, suitClue));
+                    boolean isTempoClue = isTempo(game.players[i].hand, tile, suitClue);
+                    if (isFocus(game.players[i].hand, tile, suitClue) && isGoodTouch(game.players[i].hand, i, suitClue)
+                            && (!isTempoClue || canGiveTempoClue))
+                        possibleActions.add(new ClueAction(i, suitClue, isTempoClue));
 
                     Clue valueClue = new Clue(ClueType.PLAY, tile.value);
-                    if (isFocus(game.players[i].hand, tile, valueClue) && isGoodTouch(game.players[i].hand, i, valueClue))
-                        possibleActions.add(new ClueAction(i, valueClue));
+                    isTempoClue = isTempo(game.players[i].hand, tile, valueClue);
+                    if (isFocus(game.players[i].hand, tile, valueClue) && isGoodTouch(game.players[i].hand, i, valueClue)
+                            && (!isTempoClue|| canGiveTempoClue))
+                        possibleActions.add(new ClueAction(i, valueClue, isTempoClue));
                 }
                 //TODO: add delayed play clues
             }
         }
+
+        /* Putting this here for later - what do if cannot discard and no clues (even tempo ones) to give
+        else if (game.clues > 0)
+        {
+            /*
+            //possibleActions.addAll(enumerateDesperateClueActions());
+            for (Player player : game.players)
+            {
+                if (this.equals(player))
+                    continue;
+
+                ArrayList<String> suitsNotInHand = new ArrayList<>(List.of(Tile.SUIT_INDEX));
+                ArrayList<Integer> valuesNotInHand = new ArrayList<>(List.of(Tile.ALL_VALUES));
+                for (Tile tile : player.hand)
+                {
+                    /*
+                    suitsNotInHand.remove(tile.suit);
+                    valuesNotInHand.remove(tile.value);
+                     *//*
+                }
+            }
+            */
+        //TODO: finish this method, idea is: if you are clued an opening hand of all 5s or something, and you have no other legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there is not a given suit/value in their hand.
+        //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
+        /*}
+        else
+        {
+            //TODO: figure out what to do when you have no chop position and no clues are available to give
+        }
+        */
     }
 
     public void interpretClue(Clue clue)
@@ -190,7 +205,12 @@ public class Player
                         playClue.possibleSuits.add(suit);
                     }
                 }
-            if (!playClue.possibleSuits.isEmpty())
+            if (playClue.possibleSuits.size() == 1)
+            {
+                playClue.suit = playClue.possibleSuits.iterator().next();
+                playClue.possibleSuits = new HashSet<>();
+            }
+            if (!playClue.suit.isBlank() || !playClue.possibleSuits.isEmpty())
                 focusClues.add(playClue);
             //TODO: do this for delayed play clues
         }
@@ -207,7 +227,12 @@ public class Player
                     if (!game.canSee(this, possibleFive) && !game.isPlayable(possibleFive))
                         fiveSaveClue.possibleSuits.add(suit);
                 }
-                if (!fiveSaveClue.possibleSuits.isEmpty()) //don't add a save clue if there are no possible suits for it to be
+                if (fiveSaveClue.possibleSuits.size() == 1)
+                {
+                    fiveSaveClue.suit = fiveSaveClue.possibleSuits.iterator().next();
+                    fiveSaveClue.possibleSuits = new HashSet<>();
+                }
+                if (!fiveSaveClue.suit.isBlank() || !fiveSaveClue.possibleSuits.isEmpty()) //don't add a save clue if there are no possible suits for it to be
                     focusClues.add(fiveSaveClue);
             }
             else if (clue.value == 2) //two save
@@ -216,10 +241,15 @@ public class Player
                 for (String suit : Tile.SUIT_INDEX)
                 {
                     Tile possibleTwo = new Tile(new Clue(ClueType.NULL, 2, suit));
-                    if (game.numCanSee(this, possibleTwo) < 2 && !game.isPlayable(possibleTwo) && !game.isUseless(possibleTwo))
+                    if (!game.canSeeInOtherHands(this, possibleTwo) && !game.isPlayable(possibleTwo) && !game.isUseless(possibleTwo))
                         twoSaveClue.possibleSuits.add(suit);
                 }
-                if (!twoSaveClue.possibleSuits.isEmpty()) //don't add a save clue if there are no possible suits for it to be
+                if (twoSaveClue.possibleSuits.size() == 1)
+                {
+                    twoSaveClue.suit = twoSaveClue.possibleSuits.iterator().next();
+                    twoSaveClue.possibleSuits = new HashSet<>();
+                }
+                if (!twoSaveClue.suit.isBlank() || !twoSaveClue.possibleSuits.isEmpty()) //don't add a save clue if there are no possible suits for it to be
                     focusClues.add(twoSaveClue);
             }
             else //critical saves
@@ -322,7 +352,7 @@ public class Player
      *  - What type of clue action is this (Play, Five save, Two save, critical save, delayed play (soon(tm)))
      *  - How many playable tiles does this play clue hit (0 for non-play clues)
      *  - How many tiles does the clue touch?
-     *  - is this a colour clue? (used to break ties between equivalent colour and value clues)
+     *  - Colour Clue (3), Value Clue (2), Fill-In Tempo Clue (1), Non-Fill-In Tempo Clue (0)
      */
     public void prioritiseActions()
     {
@@ -337,8 +367,11 @@ public class Player
             else if (action instanceof ClueAction clueAction)
             {
                 // a colour clue is generally more specific than a number clue
-                if (!clueAction.intendedClue.suit.isBlank())
-                    priority += 1;
+                if (!clueAction.isTempo)
+                    if (!clueAction.intendedClue.suit.isBlank())
+                        priority += 3;
+                    else
+                        priority += 2;
 
                 priority += 10 * matchedTiles(clueAction.intendedClue, game.players[clueAction.targetPlayer].hand, false);
                 priority += 100 * matchedTiles(clueAction.intendedClue, game.players[clueAction.targetPlayer].hand, true)
@@ -366,7 +399,7 @@ public class Player
                 // do *I* need to give this save clue //TODO: more complicated analysis of if you need to give the clue
                 //that means the player that needs saving is next, or there will not be enough clues for the player prior
                 // to the one who needs to clue if everyone beforehand uses a clue
-                if ((isNextPlayer(clueAction.targetPlayer) || betweenPlayersCannotGiveClue()))
+                if ((isNextPlayer(clueAction.targetPlayer) || betweenPlayersCannotGiveClue()) && !clueAction.isTempo)
                     priority += 100000;
             }
 
@@ -511,11 +544,14 @@ public class Player
                             cluesToAdd.add(new Clue(ClueType.PLAY, clue.value, suit));
                         }
                 }
-                clue.possibleSuits.removeAll(removeSuits);
+                removeSuits.forEach(clue.possibleSuits::remove);
                 cluesToAdd = (ArrayList<Clue>)cluesToAdd.stream().filter(c -> !tile.negativeSuitInformation.contains(c.suit)).collect(Collectors.toList());
 
-                if (clue.possibleSuits.size() == 1)
-                    clue.suit = clue.possibleSuits.remove(0);
+                if (clue.suit.isBlank() && clue.possibleSuits.size() == 1)
+                {
+                    clue.suit = clue.possibleSuits.iterator().next();
+                    clue.possibleSuits = new HashSet<>();
+                }
             }
             tile.information.removeAll(cluesToRemove);
             tile.information.addAll(cluesToAdd);
@@ -552,7 +588,7 @@ public class Player
                         if (compiledSuits.size() == 1)
                             compiledClue.suit = compiledSuits.iterator().next();
                         else
-                            compiledClue.possibleSuits = new ArrayList<>(compiledSuits);
+                            compiledClue.possibleSuits = new HashSet<>(compiledSuits);
                         cluesToAdd.add(compiledClue);
                     }
                 }
@@ -625,15 +661,6 @@ public class Player
     private boolean isGoodTouch(Tile[] hand, int playerIndex, Clue clue)
     {
         ArrayList<Tile> touchedTiles = game.touchedTiles(hand, clue);
-
-        // if the clue only touches one tile and it's not playable right now and it has already been clued on the clue value being given, this is a bad touch
-        // I might need to make a more sophisticated way of determining this (like re-hinting a previously clued tile that was not the focus to encourage playing it immediately)
-        /*
-        if (touchedTiles.size() == 1 && touchedTiles.get(0).isClued() && !touchedTiles.get(0).isPlayable() &&
-                (touchedTiles.get(0).hintedIdentity.suit.equals(clue.suit) || touchedTiles.get(0).hintedIdentity.value.equals(clue.value)))
-            return false;
-         */
-
         for (Tile touchedTile : touchedTiles)
         {
             //save clues can violate good touch - thus for the purpose of this method they always count as good touch
@@ -656,11 +683,6 @@ public class Player
 
                     if (i == playerIndex)
                     {
-                        //re-clueing the same tile with the same clue is also bad (for now, this will need to be made more compex to allow re-clueing to indicate what was thought to be a save clue is actually a play clue)
-                        if (isFocus(hand, touchedTile, clue) && ((!clue.suit.isBlank() && touchedTile.hintedIdentity.suit.equals(clue.suit)) ||
-                                (clue.value != 0 && touchedTile.hintedIdentity.value.equals(clue.value))) && !touchedTile.information.isEmpty())
-                            return false;
-
                         //same player's hand touching multiple of the same tile in hand is bad
                         for (int k = j + 1; k < handSize; k++)
                             if (handTile.equals(game.players[i].hand[k]))
@@ -689,6 +711,8 @@ public class Player
 
         return true;
     }
+
+    private boolean isTempo(Tile[] hand, Tile tile, Clue clue) { return (isFocus(hand, tile, clue) && tile.isClued()); }
 
     private int matchedTiles(Clue clue, Tile[] hand, boolean matchPlayableOnly)
     {
