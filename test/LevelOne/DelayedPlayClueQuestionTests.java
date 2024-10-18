@@ -54,9 +54,9 @@ public class DelayedPlayClueQuestionTests
         alice.hand = new Tile[alice.handSize];
         bob.hand = Tile.hand(Tile.b3, null, null, null, Tile.b1); //1b to prevent the chop going whack
 
-        Tile ct3 = new Tile(1, "r");
+        Tile ct3 = new Tile("r", 1);
         ct3.hintedIdentity.value = 1;
-        Tile ct4 = new Tile(1, "g");
+        Tile ct4 = new Tile("g", 1);
         ct4.hintedIdentity.value = 1;
         cathy.hand = Tile.hand(null, null, ct3, ct4, null);
 
@@ -94,21 +94,21 @@ public class DelayedPlayClueQuestionTests
         alice.hand = new Tile[alice.handSize];
         bob.hand = Tile.hand(Tile.b4, null, null, Tile.b1); //1b to stop the chop going whack
 
-        Tile ct2 = new Tile(2, "y");
+        Tile ct2 = new Tile("y", 2);
         ct2.hintedIdentity.suit = "y";
         Clue cc2 = new Clue(ClueType.PLAY, 2, "y");
         ct2.information.add(cc2);
-        Tile ct3 = new Tile(3, "y");
+        Tile ct3 = new Tile("y", 3);
         ct3.hintedIdentity.suit = "y";
         Clue cc33 = new Clue(ClueType.DELAYED_PLAY, 3, "y");
         Clue cc34 = new Clue(ClueType.DELAYED_PLAY, 4, "y");
         ct3.information.addAll(List.of(cc33, cc34));
-        Tile ct4 = new Tile(5, "g");
+        Tile ct4 = new Tile("g", 5);
         ct4.hintedIdentity.value = 5;
         cathy.hand = Tile.hand(Tile.r1, ct2, ct3, ct4);
         cathy.updateChopPosition();
 
-        Tile dt4 = new Tile(3, "b");
+        Tile dt4 = new Tile("b", 3);
         dt4.hintedIdentity.suit = "b";
         Clue dc4 = new Clue(ClueType.PLAY, 3, "b");
         dt4.information.add(dc4);

@@ -26,6 +26,7 @@ public class Clue
         this.suit = suit;
     }
 
+    //TODO: refactor so that code is always suit-value and dispaly/ui output is value-suit to distinguish them more easily
     public Clue(ClueType clueType, int value, String suit)
     {
         this.clueType = clueType;

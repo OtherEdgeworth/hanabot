@@ -27,9 +27,9 @@ public class ClueInterpretationQuestionTests
         cathy.hand = Tile.hand(null, null, Tile.g4, Tile.g3);
         cathy.updateChopPosition();
 
-        Tile dt3 = new Tile(3, "w");
+        Tile dt3 = new Tile("w", 3);
         dt3.hintedIdentity.value = 3;
-        Tile dt4 = new Tile(3, "r");
+        Tile dt4 = new Tile("r", 3);
         dt4.hintedIdentity.value = 3;
         donald.hand = Tile.hand(Tile.b3, Tile.g2, dt3, dt4);
 
@@ -87,9 +87,9 @@ public class ClueInterpretationQuestionTests
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        Tile bt4 = new Tile(2, "r");
+        Tile bt4 = new Tile("r", 2);
         bt4.hintedIdentity.value = 2;
-        Tile bt5 = new Tile(5, "r");
+        Tile bt5 = new Tile("r", 5);
         bt5.hintedIdentity.value = 5;
         bob.hand = Tile.hand(null, Tile.r4, Tile.r3, bt4, bt5);
         bob.updateChopPosition();
@@ -122,7 +122,7 @@ public class ClueInterpretationQuestionTests
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        Tile bt5 = new Tile(2, "b");
+        Tile bt5 = new Tile("b", 2);
         bt5.hintedIdentity.value = 2;
         bob.hand = Tile.hand(null, null, Tile.b5, Tile.b3, bt5);
         bob.updateChopPosition();

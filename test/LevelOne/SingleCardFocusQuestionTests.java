@@ -43,9 +43,9 @@ public class SingleCardFocusQuestionTests
         alice.hand = new Tile[alice.handSize];
 
         Player bob = new Player(5, ChopMethod.NON_CLUED, false);
-        Tile bt2 = new Tile(2, "b");
+        Tile bt2 = new Tile("b", 2);
         bt2.hintedIdentity.value = 2;
-        Tile bt5 = new Tile(2, "r");
+        Tile bt5 = new Tile("r", 2);
         bt5.hintedIdentity.value = 2;
         Clue bc5 = new Clue(ClueType.TWO_SAVE, 2);
         bt5.information.add(bc5);
@@ -65,9 +65,9 @@ public class SingleCardFocusQuestionTests
         alice.hand = new Tile[alice.handSize];
 
         Player bob = new Player(5, ChopMethod.NON_CLUED, false);
-        Tile bt4 = new Tile(5, "b");
+        Tile bt4 = new Tile("b", 5);
         bt4.hintedIdentity.value = 5;
-        Tile bt5 = new Tile(2, "r");
+        Tile bt5 = new Tile("r", 2);
         bt5.hintedIdentity.value = 2;
         Clue bc5 = new Clue(ClueType.TWO_SAVE, 2);
         bt5.information.add(bc5);

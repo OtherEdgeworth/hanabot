@@ -17,7 +17,7 @@ public class GeneralStrategyQuestionTests
         game.discarded.put(Tile.w4, 1);
 
         // Setup hands
-        Tile at1 = new Tile(2, "y");
+        Tile at1 = new Tile("y", 2);
         at1.hintedIdentity.suit = "y";
         at1.information.add(new Clue(ClueType.PLAY, 2, "y"));
         alice.hand = Tile.hand(at1, null, null, null, Tile.b1); //b1 for chop
@@ -52,7 +52,7 @@ public class GeneralStrategyQuestionTests
         game.inPlay = Tile.hand(null, Tile.g2, Tile.r1, Tile.y2, Tile.w3);
 
         // Setup hands
-        Tile at5 = new Tile(2, "b");
+        Tile at5 = new Tile("b", 2);
         at5.hintedIdentity.value = 2;
         at5.information.add(new Clue(ClueType.TWO_SAVE, 2));
         alice.hand = Tile.hand(null, null, null, null, at5);
@@ -104,7 +104,7 @@ public class GeneralStrategyQuestionTests
         bob.updateChopPosition();
 
         //cathy b4, y2 (clued y 2 PLAY), w4 r3 w1
-        Tile ct2 = new Tile(2, "y");
+        Tile ct2 = new Tile("y", 2);
         ct2.hintedIdentity.suit = "y";
         ct2.information.add(new Clue(ClueType.PLAY, 2, "y"));
         cathy.hand = Tile.hand(Tile.b4, ct2, Tile.w4, Tile.r3, Tile.w1);

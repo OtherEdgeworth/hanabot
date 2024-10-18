@@ -20,7 +20,7 @@ public class TwoSaveQuestionTests
         alice.hand = new Tile[alice.handSize];
         bob.hand = Tile.hand(null, null, null, Tile.y2, null);
 
-        Tile ct2 = new Tile(1, "y");
+        Tile ct2 = new Tile("y", 1);
         ct2.hintedIdentity.value = 1;
         Clue cc2 = new Clue(ClueType.PLAY, 1, "y");
         ct2.information.add(cc2);
@@ -59,7 +59,7 @@ public class TwoSaveQuestionTests
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        Tile bt1 = new Tile(1, "r");
+        Tile bt1 = new Tile("r", 1);
         bt1.hintedIdentity.value = 1;
         Clue bc1 = new Clue(ClueType.PLAY, 1);
         bc1.possibleSuits.addAll(List.of("b", "r", "w"));

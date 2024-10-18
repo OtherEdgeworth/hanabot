@@ -18,8 +18,8 @@ public class Tile implements Comparable<Tile>
     String suit;
     int value;
 
-
-    Tile(int value, String suit)
+    //TODO: make sure code is always suit-value and display/ui output is always value-suit to be able to distinguish the two more easily.
+    Tile(String suit, int value)
     {
         this.value = value;
         this.suit = suit;
@@ -38,7 +38,7 @@ public class Tile implements Comparable<Tile>
 
     Tile (Tile tile, boolean fullCopy)
     {
-        this(tile.value, tile.suit);
+        this(tile.suit, tile.value);
         this.inChopPosition = false;
 
         if (fullCopy)
@@ -53,7 +53,7 @@ public class Tile implements Comparable<Tile>
 
     Tile (Clue clue)
     {
-        this(clue.value, clue.suit);
+        this(clue.suit, clue.value);
         this.inChopPosition = false;
         this.hintedIdentity = clue;
     }
@@ -230,37 +230,37 @@ public class Tile implements Comparable<Tile>
     }
 
     //blues
-    public static final Tile b1 = new Tile(1, "b");
-    public static final Tile b2 = new Tile(2, "b");
-    public static final Tile b3 = new Tile(3, "b");
-    public static final Tile b4 = new Tile(4, "b");
-    public static final Tile b5 = new Tile(5, "b");
+    public static final Tile b1 = new Tile("b", 1);
+    public static final Tile b2 = new Tile("b", 2);
+    public static final Tile b3 = new Tile("b", 3);
+    public static final Tile b4 = new Tile("b", 4);
+    public static final Tile b5 = new Tile("b", 5);
 
     //greens
-    public static final Tile g1 = new Tile(1, "g"); //has negative b?
-    public static final Tile g2 = new Tile(2, "g"); //has negative b?
-    public static final Tile g3 = new Tile(3, "g");
-    public static final Tile g4 = new Tile(4, "g");
-    public static final Tile g5 = new Tile(5, "g");
+    public static final Tile g1 = new Tile("g", 1); //has negative b?
+    public static final Tile g2 = new Tile("g", 2); //has negative b?
+    public static final Tile g3 = new Tile("g", 3);
+    public static final Tile g4 = new Tile("g", 4);
+    public static final Tile g5 = new Tile("g", 5);
 
     //reds
-    public static final Tile r1 = new Tile(1, "r");
-    public static final Tile r2 = new Tile(2, "r");
-    public static final Tile r3 = new Tile(3, "r");
-    public static final Tile r4 = new Tile(4, "r");
-    public static final Tile r5 = new Tile(5, "r");
+    public static final Tile r1 = new Tile("r", 1);
+    public static final Tile r2 = new Tile("r", 2);
+    public static final Tile r3 = new Tile("r", 3);
+    public static final Tile r4 = new Tile("r", 4);
+    public static final Tile r5 = new Tile("r", 5);
 
     //yellows
-    public static final Tile y1 = new Tile(1, "y");
-    public static final Tile y2 = new Tile(2, "y");
-    public static final Tile y3 = new Tile(3, "y");
-    public static final Tile y4 = new Tile(4, "y"); //has negative b?
-    public static final Tile y5 = new Tile(5, "y");
+    public static final Tile y1 = new Tile("y", 1);
+    public static final Tile y2 = new Tile("y", 2);
+    public static final Tile y3 = new Tile("y", 3);
+    public static final Tile y4 = new Tile("y", 4); //has negative b?
+    public static final Tile y5 = new Tile("y", 5);
 
     //whites
-    public static final Tile w1 = new Tile(1, "w");
-    public static final Tile w2 = new Tile(2, "w");
-    public static final Tile w3 = new Tile(3, "w");
-    public static final Tile w4 = new Tile(4, "w");
-    public static final Tile w5 = new Tile(5, "w"); //has negative b?
+    public static final Tile w1 = new Tile("w", 1);
+    public static final Tile w2 = new Tile("w", 2);
+    public static final Tile w3 = new Tile("w", 3);
+    public static final Tile w4 = new Tile("w", 4);
+    public static final Tile w5 = new Tile("w", 5); //has negative b?
 }

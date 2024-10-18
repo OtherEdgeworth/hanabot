@@ -17,15 +17,15 @@ public class CriticalSaveQuestionTests
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        Tile bt4 = new Tile(4, "r");
+        Tile bt4 = new Tile("r", 4);
         bt4.hintedIdentity.value = 4;
-        Tile bt5 = new Tile(4, "w");
+        Tile bt5 = new Tile("w", 4);
         bt5.hintedIdentity.value = 4;
         bt5.information.add(new Clue(ClueType.PLAY, 4, "w"));
         bob.hand = Tile.hand(null, null, Tile.g3, bt4, bt5);
         bob.updateChopPosition();
 
-        Tile ct2 = new Tile(2, "r");
+        Tile ct2 = new Tile("r", 2);
         ct2.hintedIdentity.suit = "r";
         Clue cc2 = new Clue(ClueType.PLAY, 2, "r");
         ct2.information.add(cc2);
@@ -126,7 +126,7 @@ public class CriticalSaveQuestionTests
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        Tile bt5 = new Tile(3, "r");
+        Tile bt5 = new Tile("r", 3);
         bt5.hintedIdentity.value = 3;
         bt5.information.add(new Clue(ClueType.PLAY, 3, "r"));
         bob.hand = Tile.hand(null, null, null, Tile.y4, bt5);

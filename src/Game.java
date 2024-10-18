@@ -199,7 +199,7 @@ public class Game
             }
             else
                 for (String suit : Tile.SUIT_INDEX)
-                    if (clue.equals(new Tile(clue.value, suit)))
+                    if (clue.equals(new Tile(suit, clue.value)))
                         return true;
         }
 
@@ -320,9 +320,9 @@ public class Game
         for (int i = 0; i < inPlay.length; i++)
         {
             if (inPlay[i] == null)
-                playableTiles.add(new Tile(1, Tile.suitByIndex(i)));
+                playableTiles.add(new Tile(Tile.suitByIndex(i), 1));
             else if (inPlay[i].value < 5)
-                playableTiles.add((new Tile(inPlay[i].value + 1, inPlay[i].suit)));
+                playableTiles.add((new Tile(inPlay[i].suit, inPlay[i].value + 1)));
         }
 
         return playableTiles;

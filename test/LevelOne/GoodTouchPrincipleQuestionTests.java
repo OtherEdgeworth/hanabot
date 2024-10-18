@@ -49,9 +49,9 @@ public class GoodTouchPrincipleQuestionTests
         bob.updateChopPosition();
 
         Tile ct3 = new Tile(new Clue(ClueType.NULL, 3, "r"));
-        Tile ct4 = new Tile(4, "r");
+        Tile ct4 = new Tile("r", 4);
         ct4.hintedIdentity.suit = "r";
-        Tile ct5 = new Tile(3, "g");
+        Tile ct5 = new Tile("g", 3);
         ct5.hintedIdentity.value = 3;
         cathy.hand = Tile.hand(Tile.g2, Tile.w2, ct3, ct4, ct5);
         cathy.updateChopPosition();
@@ -95,7 +95,7 @@ public class GoodTouchPrincipleQuestionTests
         game.inPlay = Tile.hand(null, Tile.g1, null, Tile.y1, null);
 
         // Setup hands
-        Tile at5 = new Tile(2, "b");
+        Tile at5 = new Tile("b", 2);
         at5.hintedIdentity.value = 2;
         Clue ac51 = new Clue(ClueType.TWO_SAVE, 2);
         ac51.possibleSuits.addAll(List.of("b", "r", "w"));

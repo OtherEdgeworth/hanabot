@@ -17,14 +17,14 @@ public class MinimumClueValuePrincipleQuestionTests
         alice.hand = new Tile[5];
         alice.updateChopPosition();
 
-        Tile bt4 = new Tile(4, "b");
+        Tile bt4 = new Tile("b", 4);
         bt4.hintedIdentity.suit = "b";
         bob.hand = Tile.hand(Tile.w5, Tile.g5, Tile.g3, bt4, Tile.r1);
         bob.updateChopPosition();
 
-        Tile ct4 = new Tile(2, "r");
+        Tile ct4 = new Tile("r", 2);
         ct4.hintedIdentity.value = 2;
-        Tile ct5 = new Tile(2, "y");
+        Tile ct5 = new Tile("y", 2);
         ct5.hintedIdentity.value = 2;
         cathy.hand = Tile.hand(Tile.b2, Tile.g4, Tile.y1, ct4, ct5);
         cathy.updateChopPosition();

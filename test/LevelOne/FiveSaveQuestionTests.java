@@ -21,9 +21,9 @@ public class FiveSaveQuestionTests
         bob.hand = Tile.hand(Tile.w4, Tile.g4, Tile.y5, Tile.y1);
         bob.updateChopPosition();
 
-        Tile ct3 = new Tile( 3, "g");
+        Tile ct3 = new Tile("g", 3);
         ct3.hintedIdentity.suit = "g";
-        Tile ct4 = new Tile(2, "g");
+        Tile ct4 = new Tile("g", 2);
         ct4.hintedIdentity.suit = "g";
         cathy.hand = Tile.hand(Tile.y4, Tile.g4, ct3, ct4);
         cathy.updateChopPosition();
@@ -47,25 +47,21 @@ public class FiveSaveQuestionTests
         Player alice = new Player();
         Player bob = new Player();
         Player cathy = new Player();
-        Player donald = new Player();
-        Game game = new Game(0, alice, bob, cathy, donald);
+        Game game = new Game(0, alice, bob, cathy);
         game.inPlay = Tile.hand(Tile.b3, null, Tile.r1, null, Tile.w2);
 
         // Setup hands
         alice.hand = new Tile[alice.handSize];
 
-        bob.hand = Tile.hand(Tile.r1, Tile.w5, Tile.g5, Tile.y2);
+        bob.hand = Tile.hand(null, Tile.r1, Tile.w5, Tile.g5, Tile.y2);
         bob.updateChopPosition();
 
-        Tile ct3 = new Tile(5, "b");
+        Tile ct3 = new Tile("b", 5);
         ct3.hintedIdentity.value = 5;
-        Tile ct4 = new Tile(2, "y");
+        Tile ct4 = new Tile("y", 2);
         ct4.hintedIdentity.value = 2;
-        cathy.hand = Tile.hand(Tile.r4, Tile.y5, ct3, ct4);
+        cathy.hand = Tile.hand(null, Tile.r4, Tile.y5, ct3, ct4);
         cathy.updateChopPosition();
-
-        donald.hand = Tile.hand(Tile.w4, Tile.b1, Tile.r5, Tile.w3);
-        donald.updateChopPosition();
 
         // Take actions - Alice enumerates and prioritises her possible actions
         alice.enumerateActions();

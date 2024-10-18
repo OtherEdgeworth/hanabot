@@ -74,7 +74,6 @@ public class Player
             else if (tile.hasOnlyPlayClues())
                 possibleActions.add(new PlayAction(i));
         }
-        //TODO: add support for other clues (prompt, finesse; check if delayed is now playable?)
 
         // enumerate possible clues to give
         //identify critical tiles
@@ -134,7 +133,7 @@ public class Player
                     int nextPlayValue = filteredPlayableTiles.get(0).value;
                     boolean chainedPlayClues = true;
                     for (int k = nextPlayValue; k < tile.value; k++)
-                        if (!game.canSeePlayCluedInOtherHands(this, new Tile(k, tile.suit)))
+                        if (!game.canSeePlayCluedInOtherHands(this, new Tile(tile.suit, k)))
                         {
                             chainedPlayClues = false;
                             break;
@@ -158,6 +157,16 @@ public class Player
             }
         }
 
+        //TODO: determine what each player may interpret the prompt clue as and remove any clues that would cause a tile
+        // to be prompted as something it isn't
+        //iterate delayed_play clues (prompts are only on clued tiles)
+        //determine what prompt (if any) and for who this clue creates; remember prompts only fill in one space (multi-prompt is level 2)
+        //remove the delayed clue (and prompt) if the prompt is invalid (i.e. it prompts a tile to be a suit/value it is not
+
+        //TODO: no focus clues - idea is: if you are clued an opening hand of all 5s or something, and you have no other
+        // legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there
+        // is not a given suit/value in their hand.
+        //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
         /* Putting this here for later - what do if cannot discard and no clues (even tempo ones) to give
         else if (game.clues > 0)
         {
@@ -179,14 +188,6 @@ public class Player
                 }
             }
             */
-        //TODO: finish this method, idea is: if you are clued an opening hand of all 5s or something, and you have no other legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there is not a given suit/value in their hand.
-        //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
-        /*}
-        else
-        {
-            //TODO: figure out what to do when you have no chop position and no clues are available to give
-        }
-        */
     }
 
     public void interpretClue(Clue clue)
@@ -205,7 +206,7 @@ public class Player
             Tile inPlayTile = game.inPlay[Tile.suitIndex(clue.suit)];
             int toPlayValue = (inPlayTile == null ? 1 : inPlayTile.value + 1);
 
-            Tile checkTile = new Tile(toPlayValue, clue.suit);
+            Tile checkTile = new Tile(clue.suit, toPlayValue);
             if ((focusTile.hintedIdentity.value.equals(toPlayValue) || (focusTile.hintedIdentity.value.equals(0) && !focusTile.negativeValueInformation.contains(toPlayValue)))
                     && !game.canSeePlayCluedInOtherHands(this, checkTile)
                     && !mightSeePlayClueInOwnHand(checkTile, focusIndex))
@@ -213,12 +214,12 @@ public class Player
 
             for (int i = toPlayValue; i < 5; i++)
             {
-                checkTile = new Tile(i, clue.suit);
+                checkTile = new Tile(clue.suit, i);
                 if (game.canSeePlayCluedInOtherHands(this, checkTile) || mightSeePlayClueInOwnHand(checkTile, focusIndex))
                 {
-                    if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, clue.suit)))
+                    if (game.canSeePlayCluedInOtherHands(this, new Tile(clue.suit, i + 1)))
                         continue;
-                    else if (!game.allDiscarded(new Tile(i + 1, clue.suit)))
+                    else if (!game.allDiscarded(new Tile(clue.suit, i + 1)))
                         focusClues.add(new Clue(ClueType.DELAYED_PLAY, i + 1, clue.suit));
                     else
                         break;
@@ -261,14 +262,14 @@ public class Player
 
                 for (int i = toPlayValue; i < clue.value; i++)
                 {
-                    Tile checkTile = new Tile(i, suit);
+                    Tile checkTile = new Tile(suit, i);
                     if (mightSeePlayClueInOwnHand(checkTile, focusIndex))
                         delayClue.possibleSuits.add(suit);
                     else if (game.canSeePlayCluedInOtherHands(this, checkTile))
                     {
-                        if (game.canSeePlayCluedInOtherHands(this, new Tile(i + 1, suit)))
+                        if (game.canSeePlayCluedInOtherHands(this, new Tile(suit, i + 1)))
                             continue;
-                        else if (!game.allDiscarded(new Tile(i + 1, clue.suit)))
+                        else if (!game.allDiscarded(new Tile(clue.suit, i + 1)))
                             delayClue.possibleSuits.add(suit);
                         else
                             break;

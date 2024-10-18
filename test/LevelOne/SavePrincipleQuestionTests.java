@@ -20,7 +20,7 @@ public class SavePrincipleQuestionTests
         // Setup hands
         alice.hand = new Tile[5];
 
-        Tile bt1 = new Tile(1, "b");
+        Tile bt1 = new Tile("b", 1);
         bob.hand = Tile.hand(bt1, null, null, null, null);
         bob.updateChopPosition();
 
@@ -57,9 +57,9 @@ public class SavePrincipleQuestionTests
         bob.hand = Tile.hand(Tile.g4, Tile.b5, Tile.g1, Tile.r2, Tile.y2);
         bob.updateChopPosition();
 
-        Tile ct4 = new Tile(5, "w");
+        Tile ct4 = new Tile("w", 5);
         ct4.hintedIdentity.suit = "w";
-        Tile ct5 = new Tile(4, "w");
+        Tile ct5 = new Tile("w", 4);
         ct5.hintedIdentity.suit = "w";
         cathy.hand = Tile.hand(Tile.r5, Tile.w3, Tile.g3, ct4, ct5);
         cathy.updateChopPosition();

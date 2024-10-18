@@ -40,17 +40,17 @@ public class EarlyGameQuestionTests
         game.clues = 1;
 
         // Setup hands
-        Tile at5 = new Tile(5, "b");
+        Tile at5 = new Tile("b", 5);
         at5.hintedIdentity.value = 5;
         alice.hand = Tile.hand(null, null, null, Tile.b1, at5); //b1 just to avoid the chop going whack
         alice.updateChopPosition();
 
-        Tile bt3 = new Tile(1, "w");
+        Tile bt3 = new Tile("w", 1);
         bt3.hintedIdentity.value = 1;
         Clue bc3 = new Clue(ClueType.PLAY, 1);
         bc3.possibleSuits.addAll(List.of("g", "w"));
         bt3.information.add(bc3);
-        Tile bt4 = new Tile(1, "g");
+        Tile bt4 = new Tile("g", 1);
         bt4.hintedIdentity.value = 1;
         Clue bc4 = new Clue(ClueType.PLAY, 1);
         bt4.information.add(bc4);
@@ -59,11 +59,11 @@ public class EarlyGameQuestionTests
         bob.updateChopPosition();
 
         //cathy g3 w4 w4, w5 g5 (clued)
-        Tile ct4 = new Tile(5, "w");
+        Tile ct4 = new Tile("w", 5);
         ct4.hintedIdentity.value = 5;
         Clue cc4 = new Clue(ClueType.FIVE_SAVE, 5);
         ct4.information.add(cc4);
-        Tile ct5 = new Tile(5, "g");
+        Tile ct5 = new Tile("g", 5);
         ct5.hintedIdentity.value = 5;
         Clue cc5 = new Clue(ClueType.FIVE_SAVE, 5);
         ct5.information.add(cc5);
@@ -99,11 +99,11 @@ public class EarlyGameQuestionTests
         alice.hand = Tile.hand(null, null, null, Tile.g1); //for chop
         alice.updateChopPosition();
 
-        Tile bt2 = new Tile(2, "r");
+        Tile bt2 = new Tile("r", 2);
         bt2.hintedIdentity.suit = "r";
         Clue bc2 = new Clue(ClueType.PLAY, 2, "r");
         bt2.information.add(bc2);
-        Tile bt3 = new Tile(3, "r");
+        Tile bt3 = new Tile("r", 3);
         bt3.hintedIdentity.suit = "r";
         Clue bc3 = new Clue(ClueType.DELAYED_PLAY, 3, "r");
         bt3.information.add(bc3);
