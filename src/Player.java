@@ -426,6 +426,8 @@ public class Player
         return false;
     }
 
+    // TODO: Need to consider if this needs a full overhaul or just an adjustment to the priorities of save/pley clues
+    //  (look at the +4000 play boost for more thoughts on that)
     /* Order of Magnitude:
      *  - Do you NEED to give this clue (is it a clue? is it a critical/playable on the chop? is there another player without a guaranteed play between you and the player to be clued?)
      *  - Is this a play action?
@@ -470,11 +472,17 @@ public class Player
                 else if (clueType == ClueType.FIVE_SAVE)
                     priority += 5000;
 
+                //TODO: this should only boost when the player ALSO has a save clue enumerated for them, as giving a play is better than a save
                 //increase the priority of a play clue if the player has no play actions currently
                 Player targetPlayer = game.players[clueAction.targetPlayer];
+                if (clueType == ClueType.PLAY && !game.players[clueAction.targetPlayer].hasPlayAction())
+                    priority += 4000;
+                /*
                 if ((clueType.isSaveClue() || (clueType == ClueType.PLAY && isFocus(targetPlayer.hand, targetPlayer.hand[targetPlayer.chopPosition], clueAction.intendedClue)))
                         && !game.players[clueAction.targetPlayer].hasPlayAction())
                     priority += 4000;
+                 */
+
 
                 // do *I* need to give this save clue //TODO: more complicated analysis of if you need to give the clue
                 //that means the player that needs saving is next, or there will not be enough clues for the player prior
@@ -740,7 +748,12 @@ public class Player
 
     private boolean isGoodTouch(Tile[] hand, int playerIndex, Clue clue)
     {
+        //are there any duplicates in touchedTiles? If so, bad touch
         ArrayList<Tile> touchedTiles = game.touchedTiles(hand, clue);
+        HashSet<Tile> uniqueTouchedTiles = new HashSet<>(touchedTiles);
+        if (uniqueTouchedTiles.size() < touchedTiles.size())
+            return false;
+
         for (Tile touchedTile : touchedTiles)
         {
             //save clues can violate good touch - thus for the purpose of this method they always count as good touch
@@ -755,19 +768,15 @@ public class Player
             //has a tile that would be touched been clued in another player's hand?
             for (int i = 0; i < game.players.length; i++)
             {
+                // skip i = playerIndex, as we check against the same hand earlier
+                if (i == playerIndex)
+                    continue;
+
                 for (int j = 0; j < handSize; j++)
                 {
                     Tile handTile = game.players[i].hand[j];
                     if (handTile == null)
                         continue;
-
-                    if (i == playerIndex)
-                    {
-                        //same player's hand touching multiple of the same tile in hand is bad
-                        for (int k = j + 1; k < handSize; k++)
-                            if (handTile.equals(game.players[i].hand[k]))
-                                return false;
-                    }
 
                     //your hand, you should not clue if it *might* violate GTP based on clues you have
                     else if (i == index())

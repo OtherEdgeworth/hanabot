@@ -50,7 +50,6 @@ public class FiveSaveQuestionTests
         Player donald = new Player();
         Game game = new Game(0, alice, bob, cathy, donald);
         game.inPlay = Tile.hand(Tile.b3, null, Tile.r1, null, Tile.w2);
-        game.clues = 1;
 
         // Setup hands
         alice.hand = new Tile[alice.handSize];

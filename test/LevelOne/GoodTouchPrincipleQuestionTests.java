@@ -92,7 +92,7 @@ public class GoodTouchPrincipleQuestionTests
         Player bob = new Player();
         Player cathy = new Player();
         Game game = new Game(0, alice, bob, cathy);
-        game.inPlay = Tile.hand(Tile.b3, null, Tile.r1, null, Tile.w3);
+        game.inPlay = Tile.hand(null, Tile.g1, null, Tile.y1, null);
 
         // Setup hands
         Tile at5 = new Tile(2, "b");
