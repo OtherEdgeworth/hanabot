@@ -21,38 +21,51 @@ public class Main
         boolean debug = true;
         boolean logHumanActionsToFile = true;
         ArrayList<String> humanPlayerMoves = new ArrayList<>();
-        while (game.isInProgress())
+        ArrayList<String> allMoves = new ArrayList<>();
+        try
         {
-            System.out.println();
-            if (game.isHumanPlayerTurn() || debug)
-                System.out.println(print(game, debug));
-
-            if (game.isHumanPlayerTurn())
-                humanPlayerMoves.add(parseInput(game));
-            else
+            while (game.isInProgress())
             {
-                if (debug)
-                {
-                    String possibleActions = print(game.currentPlayer());
-                    String thoughts = game.currentPlayer().thoughts();
+                System.out.println();
+                if (game.isHumanPlayerTurn() || debug)
+                    System.out.println(print(game, debug));
 
-                    if (!possibleActions.isBlank())
-                        System.out.println(possibleActions);
-                    if (!thoughts.isBlank())
-                        System.out.println(thoughts);
+                if (game.isHumanPlayerTurn())
+                {
+                    String humanMove = parseInput(game);
+                    humanPlayerMoves.add(humanMove);
+                    allMoves.add(humanMove);
                 }
-                System.out.println(game.executeCurrentBotPlayerTurn());
+                else
+                {
+                    if (debug)
+                    {
+                        String thoughts = game.currentPlayer().thoughts();
+                        String possibleActions = print(game, game.currentPlayer().possibleActions);
+
+                        if (!thoughts.isBlank())
+                            System.out.println(thoughts);
+                        if (!possibleActions.isBlank())
+                            System.out.println(possibleActions);
+
+                    }
+                    String botMove = game.executeCurrentBotPlayerTurn();
+                    System.out.println(botMove);
+                    allMoves.add(botMove);
+                }
             }
         }
-
-        if (logHumanActionsToFile || debug)
+        finally
         {
-            OffsetDateTime now = OffsetDateTime.now();
-            FileWriter writer = new FileWriter("game-actions " + now.toString().replace(":", "-") + ".txt");
-            writer.write("Run Seed: " + game.seed + System.lineSeparator());
-            for (String str : humanPlayerMoves)
-                writer.write(str + System.lineSeparator());
-            writer.close();
+            if (logHumanActionsToFile || debug)
+            {
+                OffsetDateTime now = OffsetDateTime.now();
+                FileWriter writer = new FileWriter("game-actions " + now.toString().replace(":", "-") + ".txt");
+                writer.write("Run Seed: " + game.seed + System.lineSeparator());
+                for (String str : (debug ? allMoves : humanPlayerMoves))
+                    writer.write(ConsoleColours.removeColours(str) + System.lineSeparator());
+                writer.close();
+            }
         }
 
         System.out.println(game.endReason());
@@ -174,9 +187,8 @@ public class Main
         return sb.toString();
     }
 
-    public static String print(Player player)
+    public static String print(Game game, ArrayList<Action> playerActions)
     {
-        ArrayList<Action> playerActions = player.possibleActions;
         boolean first = true;
         StringBuilder sb = new StringBuilder();
         for (Action action : playerActions)
@@ -192,7 +204,7 @@ public class Main
                 sb.append("play my ").append(i).append(i == 1 ? "st" : (i == 2 ? "nd" : (i == 3 ? "rd" : "th"))).append(" tile");
             }
             else if (action instanceof ClueAction clueAction)
-                sb.append("clue ").append(player).append(" with ").append(clueAction.intendedClue.toStringBrief());
+                sb.append("clue ").append(game.players[clueAction.targetPlayer]).append(" with ").append(clueAction.intendedClue.toStringBrief());
             if (action.priority > 0)
                 sb.append(" (priority=").append(action.priority).append(")");
             if (first)

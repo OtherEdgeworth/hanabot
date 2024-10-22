@@ -65,7 +65,6 @@ public class Player
         else
             canGiveTempoClue = true;
 
-
         // determine definitely playable tiles from information
         ArrayList<Tile> playableTiles = game.playableTiles();
 
