@@ -36,6 +36,14 @@ public class Player
         this.isHuman = isHuman;
     }
 
+    public Player(String name, ChopMethod chopMethod, boolean isHuman)
+    {
+        hand = new Tile[handSize];
+        this.chopMethod = chopMethod;
+        this.isHuman = isHuman;
+        this.name = name;
+    }
+
     public void deal(Tile tile)
     {
         for (int i = handSize - 1; i >= 0; i--)
@@ -399,7 +407,48 @@ public class Player
         }
     }
 
-    public String name() { return (name.isBlank() ? "Player " + index() : name); }
+    public static boolean isFocus(Tile[] hand, Tile tile, Clue clue)
+    {
+        //determine unclued tiles touched
+        ArrayList<Tile> newTiles = new ArrayList<>();
+        ArrayList<Tile> oldTiles = new ArrayList<>();
+        boolean chopIsNew = false;
+        for (Tile handTile : hand)
+        {
+            if (handTile == null)
+                continue;
+
+            if (handTile.value == clue.value || handTile.suit.equals(clue.suit))
+            {
+                if (handTile.isClued())
+                    oldTiles.add(handTile);
+                else
+                {
+                    newTiles.add(handTile);
+                    if (handTile.inChopPosition)
+                        chopIsNew = true;
+                }
+            }
+        }
+
+        //if no tiles are new, focus is leftmost old
+        if (newTiles.isEmpty())
+            return oldTiles.get(0).equals(tile);
+
+        //if only one tile is new, it is the focus
+        if (newTiles.size() == 1)
+            return newTiles.get(0).equals(tile);
+
+        //if multiple new and one is the chop, it is the focus
+        if (chopIsNew)
+            return tile != null && tile.inChopPosition;
+
+        //if no new on the chop, focus is the leftmost
+        return newTiles.get(0).equals(tile);
+    }
+
+    public int index() { return List.of(game.players).indexOf(this); }
+    public String name() { return (name.isBlank() ? "Player " + (index()+1) : name); }
 
     public int focusIndex(Clue clue)
     {
@@ -579,6 +628,9 @@ public class Player
         return sb.toString();
     }
 
+    @Override
+    public String toString() { return (name.isBlank() ? "Player " + (index() + 1) : name); }
+
     public void updateTileClues()
     {
         for (Tile tile : hand)
@@ -688,50 +740,6 @@ public class Player
         }
     }
 
-    int index() { return List.of(game.players).indexOf(this); }
-
-    public static boolean isFocus(Tile[] hand, Tile tile, Clue clue)
-    {
-        //determine unclued tiles touched
-        ArrayList<Tile> newTiles = new ArrayList<>();
-        ArrayList<Tile> oldTiles = new ArrayList<>();
-        boolean chopIsNew = false;
-        for (Tile handTile : hand)
-        {
-            if (handTile == null)
-                continue;
-
-            if (handTile.value == clue.value || handTile.suit.equals(clue.suit))
-            {
-                if (handTile.isClued())
-                    oldTiles.add(handTile);
-                else
-                {
-                    newTiles.add(handTile);
-                    if (handTile.inChopPosition)
-                        chopIsNew = true;
-                }
-            }
-        }
-
-        //if no tiles are new, focus is leftmost old
-        if (newTiles.isEmpty())
-            return oldTiles.get(0).equals(tile);
-
-        //if only one tile is new, it is the focus
-        if (newTiles.size() == 1)
-            return newTiles.get(0).equals(tile);
-
-        //if multiple new and one is the chop, it is the focus
-        if (chopIsNew)
-            return tile != null && tile.inChopPosition;
-
-        //if no new on the chop, focus is the leftmost
-        return newTiles.get(0).equals(tile);
-    }
-
-    boolean isNextPlayer(int playerIndex) { return turnsTillPlayer(playerIndex) == 1; }
-
     private boolean betweenPlayersCannotGiveClue()
     {
         int mod = game.players.length;
@@ -802,6 +810,7 @@ public class Player
         return true;
     }
 
+    private boolean isNextPlayer(int playerIndex) { return turnsTillPlayer(playerIndex) == 1; }
     private boolean isTempo(Tile[] hand, Tile tile, Clue clue) { return (isFocus(hand, tile, clue) && tile.isClued()); }
 
     private int matchedTiles(Clue clue, Tile[] hand, boolean matchPlayableOnly)

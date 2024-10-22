@@ -16,6 +16,6 @@ public class ClueAction extends Action
     @Override
     public String execute(Game game, Player executingPlayer)
     {
-        return game.clue(game.players[targetPlayer], new Clue(ClueType.NULL, intendedClue));
+        return game.clue(executingPlayer, game.players[targetPlayer], new Clue(ClueType.NULL, intendedClue));
     }
 }

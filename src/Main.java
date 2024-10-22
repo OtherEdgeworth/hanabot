@@ -2,173 +2,153 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 //TODO: Cleanup code so that it is easier to read and modify bot behaviour.
 //TODO: Refactor code so that behaviour is containable in configurable levels of conventions.
 //TODO: Store not just human inputs but state changes by all players so that rollback/roll-forward can be performed.
 public class Main
 {
-
-    //TODO: FIX THE GODDAMN PLAY INTERFACE!!!
     public static void main(String[] args) throws IOException
     {
-        Player player = new Player(ChopMethod.USELESS_MAY_BE_CHOP, false);
-        Player bot = new Player(ChopMethod.USELESS_MAY_BE_CHOP, false);
+        Player miles = new Player("Miles", ChopMethod.USELESS_MAY_BE_CHOP, false);
+        Player bot1 = new Player(ChopMethod.USELESS_MAY_BE_CHOP, false);
+        Game game = new Game(0, miles, bot1);
 
-        Game game = new Game(0, player, bot);
+        boolean debug = true;
+        boolean logHumanActionsToFile = true;
+        ArrayList<String> humanPlayerMoves = new ArrayList<>();
         while (game.isInProgress())
         {
-            if (game.isHumanPlayerTurn())
-            {
-                //get player input
-                //parse it into valid game interaction
-                //execeute the requisite interaction
-                /*
-                Scanner readInput = new Scanner(System.in);
-                ArrayList<String> humanPlayerMoves = new ArrayList<>();
-                 */
-                /*
-                while (true)
-                    {
-                        System.out.printf("%nWhat do you do? "); //put this in an input loop
+            System.out.println();
+            if (game.isHumanPlayerTurn() || debug)
+                System.out.println(print(game, debug));
 
-                        /* input documentation
-                         * c,(2-5),[1-5bgryw]   - clue,player #,given clue
-                         * p,(1-HANDSIZE)       - play,position played from
-                         * d,(1-HANDSIZE)       -discard,position discarded from
-                         *//*
-                String input = readInput.next();
-                String[] splitInput = input.split(",");
-                try
+            if (game.isHumanPlayerTurn())
+                humanPlayerMoves.add(parseInput(game));
+            else
+            {
+                if (debug)
                 {
-                    if ("t".equals(splitInput[0]))
-                    {
-                        System.out.println(this.players[playerTurn].thoughts());
-                        continue;
-                    }
-                    else if ("x".equals(splitInput[0]))
-                        keepPlaying = false;
-                    else if ("c".equals(splitInput[0]))
-                    {
-                        if (clues == 0)
-                        {
-                            System.out.println("You have no clues left to give; you myst discard or play.");
-                            continue;
-                        }
-                        clue(splitInput[1], splitInput[2]);
-                    }
-                    else if ("p".equals(splitInput[0]))
-                        play(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
-                    else if ("d".equals(splitInput[0]))
-                        discard(playerTurn, splitInput[1]); //0 is hard-coded first player until we make the human anything but first player
-                    else
-                    {
-                        System.out.println("No valid input detected, please try again");
-                        continue;
-                    }
+                    String possibleActions = print(game.currentPlayer());
+                    String thoughts = game.currentPlayer().thoughts();
+
+                    if (!possibleActions.isBlank())
+                        System.out.println(possibleActions);
+                    if (!thoughts.isBlank())
+                        System.out.println(thoughts);
                 }
-                catch (ArrayIndexOutOfBoundsException aiobe)
+                System.out.println(game.executeCurrentBotPlayerTurn());
+            }
+        }
+
+        if (logHumanActionsToFile || debug)
+        {
+            OffsetDateTime now = OffsetDateTime.now();
+            FileWriter writer = new FileWriter("game-actions " + now.toString().replace(":", "-") + ".txt");
+            writer.write("Run Seed: " + game.seed + System.lineSeparator());
+            for (String str : humanPlayerMoves)
+                writer.write(str + System.lineSeparator());
+            writer.close();
+        }
+
+        System.out.println(game.endReason());
+    }
+
+    public static String parseInput(Game game)
+    {
+        Player currentPlayer = game.currentPlayer();
+        System.out.println(currentPlayer + "'s Turn:");
+        Scanner readInput = new Scanner(System.in);
+        while (true)
+        {
+            System.out.printf("%nWhat do you do? ");
+
+            //get player input
+            /* input documentation
+             * c,(2-5),[1-5bgryw]   - clue,player #,given clue
+             * d,(1-HANDSIZE)       - discard,position discarded from
+             * p,(1-HANDSIZE)       - play,position played from
+             * t                    - get what a bot in the player's position would think
+             * x                    - quit playing the game
+             */
+            String input = readInput.next();
+            String[] splitInput = input.split(",");
+            try
+            {
+                if ("t".equals(splitInput[0]))
                 {
-                    System.out.println("I could not understand the input: " + input + ". Please try again.");
+                    System.out.println(currentPlayer.thoughts());
                     continue;
                 }
-
-                humanPlayerMoves.add(gameTurn + " : " + input);
-                break;
-            }
-
-            if (print)
-                    System.out.println("Player " +(playerTurn+1)+ "'s Turn:");
-                gameTurn++;
-                if (deck.isEmpty())
-                    countdown--;
-
-                if (print)
+                else if ("x".equals(splitInput[0]))
+                    game.keepPlaying = false;
+                else if ("c".equals(splitInput[0]))
                 {
-                    System.out.println(printGameInfo());
-                    System.out.print("In play : " + print(inPlay));
-                    System.out.println(printPlayersViewOfHands(-1));
-                    if (!discarded.isEmpty())
-                        System.out.println("Discard : " + print(discarded));
+                    int cluedPlayerIndex = Integer.parseInt(splitInput[1]);
+                    String clueResult = game.clue(currentPlayer, game.players[cluedPlayerIndex], new Clue(ClueType.NULL, splitInput[2]));
+                    System.out.println(clueResult);
+                    if (Game.NO_CLUES.equals(clueResult))
+                        continue;
                 }
-
-                if (this.players[playerTurn].isHuman)
+                else if ("p".equals(splitInput[0]))
                 {
-
+                    int tileIndexToPlay = Integer.parseInt(splitInput[1]);
+                    System.out.println(game.play(currentPlayer, tileIndexToPlay));
+                }
+                else if ("d".equals(splitInput[0]))
+                {
+                    int tileIndexToDiscard = Integer.parseInt(splitInput[1]);
+                    System.out.println(game.discard(currentPlayer, tileIndexToDiscard));
                 }
                 else
                 {
-
+                    System.out.println("No valid input detected, please try again");
+                    continue;
                 }
-
-                for (Player p : this.players)
-                    p.updateTileClues();
-                playerTurn = ++playerTurn % this.players.length;
-                if (print)
-                    System.out.println();
-                 */
             }
-            else
-                game.executeCurrentBotPlayerTurn();
-                //print(game.executeCurrentBotPlayerTurn());
-        }
-        /*
-        catch (IndexOutOfBoundsException iobe)
-        {
-            System.out.println("Probably a player having their whole hand clued with things they cannot necessarily play.");
-        }
-        catch (Exception e)
-        {
-            System.out.println("Encountered exception: " + e);
-            System.out.println("Stack trace:");
-            e.printStackTrace();
-        }
-        finally
-        {
-            if (print)
+            catch (ArrayIndexOutOfBoundsException aiobe)
             {
-                OffsetDateTime now = OffsetDateTime.now();
-                FileWriter writer = new FileWriter("game-actions " + now.toString().replace(":", "-") + ".txt");
-                writer.write("Run Seed: " + seed + System.lineSeparator());
-                for (String str : humanPlayerMoves)
-                    writer.write(str + System.lineSeparator());
-                writer.close();
+                System.out.println("I could not understand the input: " + input + ". Please try again.");
+                continue;
             }
+
+            return game.playerTurn + " : " + input;
         }
-        System.out.println("The game has ended via " + (countdown == 0 ? "decking out" : (
-                    strikes == MAX_STRIKES ? "3 strikes" : (
-                            score == maxScore ? "attaining a perfrect score" : "the player ending it early"
-                    )
-            )) + " with a final score of " + score + " points.");
-         */
     }
 
-    public static String print(Tile[] inPlay)
+    public static String print(Game game, boolean debug)
     {
-        return ConsoleColours.BLUE + (inPlay[0] == null ? "[--]" : inPlay[0].toSimpleString()) +
+        return game.printGameInfo() +
+                print(game, game.inPlay) +
+                game.playersViewOfHands(debug) +
+                print(game, game.discarded);
+    }
+
+    public static String print(Game game, Tile[] inPlay)
+    {
+        return game.sameWidth("In play") + ": " +
+                ConsoleColours.BLUE + (inPlay[0] == null ? "[--]" : inPlay[0].toSimpleString()) +
                 ConsoleColours.BRIGHT_GREEN + (inPlay[1] == null ? "[--]" : inPlay[1].toSimpleString()) +
                 ConsoleColours.RED + (inPlay[2] == null ? "[--]" : inPlay[2].toSimpleString()) +
                 ConsoleColours.BRIGHT_YELLOW + (inPlay[3] == null ? "[--]" : inPlay[3].toSimpleString()) +
                 ConsoleColours.BRIGHT_WHITE + (inPlay[4] == null ? "[--]" : inPlay[4].toSimpleString()) +
-                ConsoleColours.RESET;
+                ConsoleColours.RESET + "\n";
     }
 
-    public static String print(HashMap<Tile, Integer> discarded)
+    public static String print(Game game, HashMap<Tile, Integer> discarded)
     {
+        if (discarded.isEmpty())
+            return "";
+
         SortedSet<Tile> sortedDiscards = new TreeSet<Tile>(discarded.keySet());
         boolean firstLine = true;
         boolean firstTile = true;
         String currentColour = "";
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(game.sameWidth("Discard")).append(": ");
         for (Tile tile : sortedDiscards)
         {
             if (currentColour.isBlank())
@@ -188,13 +168,15 @@ public class Main
             sb.append(discarded.get(tile)).append("x").append(currentColour).append(tile.toSimpleString());
             firstTile = false;
         }
-
+        if (!sb.toString().isBlank())
+            sb.append("\n");
         sb.append(ConsoleColours.RESET);
         return sb.toString();
     }
 
-    public static String print(ArrayList<Action> playerActions)
+    public static String print(Player player)
     {
+        ArrayList<Action> playerActions = player.possibleActions;
         boolean first = true;
         StringBuilder sb = new StringBuilder();
         for (Action action : playerActions)
@@ -210,13 +192,14 @@ public class Main
                 sb.append("play my ").append(i).append(i == 1 ? "st" : (i == 2 ? "nd" : (i == 3 ? "rd" : "th"))).append(" tile");
             }
             else if (action instanceof ClueAction clueAction)
-                sb.append("clue Player ").append(clueAction.targetPlayer + 1).append(" with ").append(clueAction.intendedClue.toStringBrief());
+                sb.append("clue ").append(player).append(" with ").append(clueAction.intendedClue.toStringBrief());
             if (action.priority > 0)
                 sb.append(" (priority=").append(action.priority).append(")");
             if (first)
                 first = false;
         }
-
+        if (!sb.toString().isBlank())
+            sb.append("\n");
         return sb.toString();
     }
 
