@@ -18,8 +18,9 @@ public class Main
         Player bot1 = new Player(ChopMethod.USELESS_MAY_BE_CHOP, false);
         Game game = new Game(0, miles, bot1);
 
+        boolean error = false;
         boolean debug = true;
-        boolean logHumanActionsToFile = true;
+        boolean logToFile = true;
         ArrayList<String> humanPlayerMoves = new ArrayList<>();
         ArrayList<String> allMoves = new ArrayList<>();
         try
@@ -55,9 +56,22 @@ public class Main
                 }
             }
         }
+        catch (IndexOutOfBoundsException iob)
+        {
+            error = true;
+            System.out.println("""
+                    The game has ended via an IndexOutOfBoundsException.
+
+                    This is most likely due to a bot thinking there are no
+                    legal moves to make and then trying to perform the first
+                    action in its empty action list.
+                    """);
+            if (debug)
+                iob.printStackTrace();
+        }
         finally
         {
-            if (logHumanActionsToFile || debug)
+            if (logToFile)
             {
                 OffsetDateTime now = OffsetDateTime.now();
                 FileWriter writer = new FileWriter("game-actions " + now.toString().replace(":", "-") + ".txt");
@@ -68,7 +82,8 @@ public class Main
             }
         }
 
-        System.out.println(game.endReason());
+        if (!error)
+            System.out.println(game.endReason());
     }
 
     public static String parseInput(Game game)

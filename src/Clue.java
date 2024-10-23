@@ -74,6 +74,8 @@ public class Clue
         return (value == o.value && suit.equals(o.suit));
     }
 
+    public boolean isDefinitive() { return !suit.isBlank() && value != 0; }
+
     public boolean matches(Tile tile)
     {
         return tile != null && ((suit.isBlank() && tile.value == value) || (tile.suit.equals(suit) && value == 0) ||
@@ -85,7 +87,7 @@ public class Clue
     {
         return (possibleSuits.isEmpty() || value != 0 || !"".equals((suit)) ? toStringBrief() : toStringVerbose());
     }
-    public String toStringBrief() { return clueType.name() + " clue '" + (value != 0 ? value : suit) + "'"; }
+    public String toStringBrief() { return (value != 0 ? value + " " : "") + suit + " " + clueType.name(); }
     public String toStringVerbose()
     {
         return ("".equals(suit) && !possibleSuits.isEmpty() ? possibleSuits.toString() : suit) + " " + value + " "

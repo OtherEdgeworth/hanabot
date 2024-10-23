@@ -197,6 +197,32 @@ public class Player
             */
     }
 
+    public int focusIndex(Clue clue)
+    {
+        for (int i = 0; i < handSize; i++)
+            if (Player.isFocus(hand, hand[i], clue))
+                return i;
+        return -1;
+    }
+
+    public boolean hasPlayAction()
+    {
+        if (possibleActions.isEmpty())
+            return false;
+
+        for (Action action : possibleActions)
+            if (action instanceof PlayAction)
+                return true;
+
+        for (Tile tile : hand)
+            if (tile != null)
+                for (Clue clue : tile.information)
+                    if (clue.clueType == ClueType.PLAY)
+                        return true;
+
+        return false;
+    }
+
     public void interpretClue(Clue clue)
     {
         int focusIndex = focusIndex(clue);
@@ -312,7 +338,7 @@ public class Player
                 for (String suit : Tile.SUIT_INDEX)
                 {
                     Tile possibleFive = new Tile(new Clue(ClueType.NULL, 5, suit));
-                    if (!game.canSee(this, possibleFive) && !game.isPlayable(possibleFive))
+                    if (!game.canSee(this, possibleFive) && !game.isPlayable(possibleFive) && !focusClues.contains(new Clue(ClueType.DELAYED_PLAY, possibleFive)))
                         fiveSaveClue.possibleSuits.add(suit);
                 }
                 if (fiveSaveClue.possibleSuits.size() == 1)
@@ -329,7 +355,7 @@ public class Player
                 for (String suit : Tile.SUIT_INDEX)
                 {
                     Tile possibleTwo = new Tile(new Clue(ClueType.NULL, 2, suit));
-                    if (!game.canSeeInOtherHands(this, possibleTwo) && !game.isPlayable(possibleTwo) && !game.isUseless(possibleTwo))
+                    if (!game.canSeeInOtherHands(this, possibleTwo) && !game.isPlayable(possibleTwo) && !game.isUseless(possibleTwo) && !focusClues.contains(new Clue(ClueType.DELAYED_PLAY, possibleTwo)))
                         twoSaveClue.possibleSuits.add(suit);
                 }
                 if (twoSaveClue.possibleSuits.size() == 1)
@@ -449,31 +475,9 @@ public class Player
     public int index() { return List.of(game.players).indexOf(this); }
     public String name() { return (name.isBlank() ? "Player " + (index()+1) : name); }
 
-    public int focusIndex(Clue clue)
-    {
-        for (int i = 0; i < handSize; i++)
-            if (Player.isFocus(hand, hand[i], clue))
-                return i;
-        return -1;
-    }
 
-    public boolean hasPlayAction()
-    {
-        if (possibleActions.isEmpty())
-            return false;
 
-        for (Action action : possibleActions)
-            if (action instanceof PlayAction)
-                return true;
 
-        for (Tile tile : hand)
-            if (tile != null)
-                for (Clue clue : tile.information)
-                    if (clue.clueType == ClueType.PLAY)
-                        return true;
-
-        return false;
-    }
 
     // TODO: Need to consider if this needs a full overhaul or just an adjustment to the priorities of save/pley clues
     //  (look at the +4000 play boost for more thoughts on that)
@@ -546,33 +550,7 @@ public class Player
         Collections.sort(possibleActions);
     }
 
-    public void updateChopPosition()
-    {
-        int firstNonCluedChop = -1;
-        int firstUselessChop = -1;
 
-        for (int i = handSize - 1; i >= 0; i--)
-        {
-            if (hand[i] == null)
-                continue;
-
-            hand[i].inChopPosition = false;
-            if (chopMethod != ChopMethod.NON_CLUED && game.isUseless(hand[i]) && firstUselessChop == -1)
-                firstUselessChop = i;
-            if (!hand[i].isClued() && firstNonCluedChop == -1)
-                firstNonCluedChop = i;
-        }
-
-        switch (chopMethod)
-        {
-            case NON_CLUED -> chopPosition = firstNonCluedChop;
-            case USELESS_MAY_BE_CHOP -> chopPosition = (Math.max(firstUselessChop, firstNonCluedChop));
-            case USELESS_PRIORITISED -> chopPosition = (firstUselessChop > -1 ? firstUselessChop : firstNonCluedChop);
-        }
-
-        if (chopPosition > -1)
-            hand[chopPosition].inChopPosition = true;
-    }
 
     public void setHandSize(int handSize)
     {
@@ -599,7 +577,7 @@ public class Player
         {
             Tile tile = hand[i];
 
-            if (!tile.isClued())
+            if (tile == null || !tile.isClued())
                 continue;
 
             sb.append("For the ").append(++i).append(i == 1 ? "st" : (i == 2 ? "nd" : (i == 3 ? "rd" : "th"))).append(" tile:\n");
@@ -630,6 +608,34 @@ public class Player
     @Override
     public String toString() { return (name.isBlank() ? "Player " + (index() + 1) : name); }
 
+    public void updateChopPosition()
+    {
+        int firstNonCluedChop = -1;
+        int firstUselessChop = -1;
+
+        for (int i = handSize - 1; i >= 0; i--)
+        {
+            if (hand[i] == null)
+                continue;
+
+            hand[i].inChopPosition = false;
+            if (chopMethod != ChopMethod.NON_CLUED && game.isUseless(hand[i]) && firstUselessChop == -1)
+                firstUselessChop = i;
+            if (!hand[i].isClued() && firstNonCluedChop == -1)
+                firstNonCluedChop = i;
+        }
+
+        switch (chopMethod)
+        {
+            case NON_CLUED -> chopPosition = firstNonCluedChop;
+            case USELESS_MAY_BE_CHOP -> chopPosition = (Math.max(firstUselessChop, firstNonCluedChop));
+            case USELESS_PRIORITISED -> chopPosition = (firstUselessChop > -1 ? firstUselessChop : firstNonCluedChop);
+        }
+
+        if (chopPosition > -1)
+            hand[chopPosition].inChopPosition = true;
+    }
+
     public void updateTileClues()
     {
         for (Tile tile : hand)
@@ -654,9 +660,9 @@ public class Player
                 if ((clue.clueType.isSaveClue() || clue.clueType == ClueType.DELAYED_PLAY) && game.isPlayable(clue))
                     clue.clueType = ClueType.PLAY;
 
-                //remove save clues if you can see all instances of the tile it is trying to save
+                //remove definitive clues if you can see all instances of the tile it is trying to save
                 int numCanSee = game.numCanSee(this, new Tile(clue));
-                if (clue.clueType.isSaveClue() && ((clue.value == 1 && numCanSee == 3) || (clue.value == 5 && numCanSee == 1) || (numCanSee == 2)))
+                if (clue.isDefinitive() && ((clue.value == 1 && numCanSee == 3) || (clue.value == 5 && numCanSee == 1) || (numCanSee == 2)))
                     cluesToRemove.add(clue);
 
                 //update possible suits - begin with suits that we have negative information on

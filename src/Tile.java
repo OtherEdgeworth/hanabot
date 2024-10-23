@@ -148,8 +148,8 @@ public class Tile implements Comparable<Tile>
                 clueContainsSuit = true;
                 break;
             }
-        boolean suitMatch = hintedIdentity.suit.equals(tile.suit) || (hintedIdentity.suit.isBlank() && clueContainsSuit);
-        return valueMatch || suitMatch;
+        boolean suitMatch = hintedIdentity.suit.equals(tile.suit) || (hintedIdentity.suit.isBlank() && (clueContainsSuit || tile.information.isEmpty()));
+        return valueMatch && suitMatch;
     }
 
     public static String fullSuit(String suit)
