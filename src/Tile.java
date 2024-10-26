@@ -18,11 +18,10 @@ public class Tile implements Comparable<Tile>
     String suit;
     int value;
 
-    //TODO: make sure code is always suit-value and display/ui output is always value-suit to be able to distinguish the two more easily.
     Tile(String suit, int value)
     {
-        this.value = value;
         this.suit = suit;
+        this.value = value;
         switch (suit)
         {
             case "b": consoleColour = ConsoleColours.BLUE; break;
@@ -103,7 +102,7 @@ public class Tile implements Comparable<Tile>
     }
 
     @Override
-    public int hashCode() { return 11 + 13 * value + (suit.isBlank() ? 0 : suit.hashCode()); }
+    public int hashCode() { return 11 +  (suit.isBlank() ? 0 : suit.hashCode()) + 13 * value; }
 
     public boolean hasAnyClueTypes(List<ClueType> clueTypes)
     {
@@ -133,14 +132,13 @@ public class Tile implements Comparable<Tile>
         return false;
     }
 
-    public boolean isClued() { return (hintedIdentity.value != 0 || !hintedIdentity.suit.isBlank() || !information.isEmpty()); }
+    public boolean isClued() { return (!hintedIdentity.suit.isBlank() || hintedIdentity.value != 0 || !information.isEmpty()); }
 
     public boolean matches(Tile tile)
     {
-        if (hintedIdentity.value == 0 && hintedIdentity.suit.isBlank())
+        if (hintedIdentity.suit.isBlank() && hintedIdentity.value == 0)
             return false;
 
-        boolean valueMatch = (hintedIdentity.value == 0 || hintedIdentity.value == tile.value) && !this.negativeValueInformation.contains(tile.value);
         boolean clueContainsSuit = false;
         for (Clue clue : this.information)
             if (clue.possibleSuits.contains(tile.suit))
@@ -149,6 +147,7 @@ public class Tile implements Comparable<Tile>
                 break;
             }
         boolean suitMatch = hintedIdentity.suit.equals(tile.suit) || (hintedIdentity.suit.isBlank() && (clueContainsSuit || tile.information.isEmpty()));
+        boolean valueMatch = (hintedIdentity.value == 0 || hintedIdentity.value == tile.value) && !this.negativeValueInformation.contains(tile.value);
         return valueMatch && suitMatch;
     }
 
@@ -206,6 +205,7 @@ public class Tile implements Comparable<Tile>
         return tile.toString();
     }
 
+    //TODO: check if tile update method in Player is already doing this, if so, can it be replaced with this method, if not, then remove this
     public void updateIdentityFromNegativeInformation()
     {
         if (!hintedIdentity.suit.isBlank())

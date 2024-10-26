@@ -348,8 +348,6 @@ public class Game
         return numCanSee;
     }
 
-
-
     ArrayList<Tile> playableTiles()
     {
         ArrayList<Tile> playableTiles = new ArrayList<>();
@@ -374,25 +372,6 @@ public class Game
         return touchedTiles;
     }
 
-    /*
-    private void clue(String otherPlayer, String clueValue)
-    {
-        int cluedPlayer = Integer.parseInt(otherPlayer) - 1;
-        Clue clue = new Clue(ClueType.NULL);
-        if (SUITS.contains(clueValue))
-            clue.suit = clueValue;
-        if (VALUES.contains(clueValue))
-            clue.value = Integer.parseInt(clueValue);
-        clue(cluedPlayer, clue);
-    }
-
-    private void discard(int currentPlayer, String discardPosition)
-    {
-        int position = Integer.parseInt(discardPosition) - 1;
-        discard(currentPlayer, position);
-    }
-    */
-
     private void housekeeping()
     {
         // Each player updates their clues and their chop position, in turn
@@ -414,6 +393,4 @@ public class Game
         if (deck.isEmpty())
             countdown--;
     }
-
-
 }

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+//TODO: make sure code is always suit-value and display/ui output is always value-suit to be able to distinguish the two more easily.
 public class Player
 {
     ChopMethod chopMethod;

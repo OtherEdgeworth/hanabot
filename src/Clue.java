@@ -10,8 +10,8 @@ public class Clue
     public Clue(ClueType clueType)
     {
         this.clueType = clueType;
+        this.suit = "";
         this.value = 0;
-        suit = "";
     }
 
     public Clue(ClueType clueType, int value)
@@ -26,26 +26,25 @@ public class Clue
         this.suit = suit;
     }
 
-    //TODO: refactor so that code is always suit-value and dispaly/ui output is value-suit to distinguish them more easily
     public Clue(ClueType clueType, int value, String suit)
     {
         this.clueType = clueType;
-        this.value = value;
         this.suit = suit;
+        this.value = value;
     }
 
     public Clue(ClueType clueType, Clue clue)
     {
         this.clueType = clueType;
-        this.value = clue.value;
         this.suit = clue.suit;
+        this.value = clue.value;
     }
 
     public Clue(ClueType clueType, Tile tile)
     {
         this.clueType = clueType;
-        this.value = tile.value;
         this.suit = tile.suit;
+        this.value = tile.value;
     }
 
     public Clue(Clue clue)
@@ -66,12 +65,12 @@ public class Clue
         return super.equals(o);
     }
 
-    public boolean equals(Clue o) { return clueType == o.clueType && value.equals(o.value) && suit.equals(o.suit); }
+    public boolean equals(Clue o) { return clueType == o.clueType && suit.equals(o.suit) && value.equals(o.value); }
     public boolean equals(Tile o)
     {
-        if (value == 0 || suit.isBlank())
+        if (suit.isBlank() || value == 0)
             return false;
-        return (value == o.value && suit.equals(o.suit));
+        return (suit.equals(o.suit) && value == o.value);
     }
 
     public boolean isDefinitive() { return !suit.isBlank() && value != 0; }
@@ -90,7 +89,7 @@ public class Clue
     public String toStringBrief() { return (value != 0 ? value + " " : "") + suit + " " + clueType.name(); }
     public String toStringVerbose()
     {
-        return ("".equals(suit) && !possibleSuits.isEmpty() ? possibleSuits.toString() : suit) + " " + value + " "
+        return value + " " + ("".equals(suit) && !possibleSuits.isEmpty() ? possibleSuits.toString() : suit) + " "
                 +  clueType.name() + " clue";
     }
 }
