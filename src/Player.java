@@ -209,18 +209,20 @@ public class Player
 
     public boolean hasPlayAction()
     {
+        // if they have no possible actions, they have no play actions
         if (possibleActions.isEmpty())
             return false;
 
+        // if they have a possible Play action, they have a play action
         for (Action action : possibleActions)
             if (action instanceof PlayAction)
                 return true;
 
+        // if there is a tile with only play clues on it, they have a possible play action, they just haven't re-enumerated
+        // their possible actions yet
         for (Tile tile : hand)
-            if (tile != null)
-                for (Clue clue : tile.information)
-                    if (clue.clueType == ClueType.PLAY)
-                        return true;
+            if (tile != null && tile.hasOnlyPlayClues())
+                return true;
 
         return false;
     }
@@ -527,7 +529,6 @@ public class Player
                     priority += 5000;
 
                 // increase the priority of a play clue if the player has no play actions currently and could be given a save clue
-                Player targetPlayer = game.players[clueAction.targetPlayer];
                 if (clueType == ClueType.PLAY && !game.players[clueAction.targetPlayer].hasPlayAction()
                         && hasSaveClueForPlayer(clueAction.targetPlayer))
                     priority += 4000;

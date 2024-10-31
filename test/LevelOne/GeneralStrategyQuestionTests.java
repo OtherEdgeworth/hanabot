@@ -44,7 +44,6 @@ public class GeneralStrategyQuestionTests
     public void generalQ2()
     {
         // Setup game
-        //g2 r1 y2 w3
         Player alice = new Player();
         Player bob = new Player();
         Player cathy = new Player();
