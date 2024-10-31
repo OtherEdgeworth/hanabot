@@ -171,10 +171,11 @@ public class Player
         //determine what prompt (if any) and for who this clue creates; remember prompts only fill in one space (multi-prompt is level 2)
         //remove the delayed clue (and prompt) if the prompt is invalid (i.e. it prompts a tile to be a suit/value it is not
 
-        //TODO: no focus clues - idea is: if you are clued an opening hand of all 5s or something, and you have no other
-        // legal clues to give anyone else then you give them a clue that hits all their tiles by informing them there
-        // is not a given suit/value in their hand.
+        //TODO: no focus clues - idea is: if you are clued an opening hand of all 5s or something and cannot discard, and
+        // you have no other legal clues to give anyone else then you give them a clue that hits all their tiles by informing
+        // them there is not a given suit/value in their hand.
         //TODO: add prioritisation for these clues (use NULL as we won't be using that for any other clue actions
+
         /* Putting this here for later - what do if cannot discard and no clues (even tempo ones) to give
         else if (game.clues > 0)
         {
@@ -481,7 +482,6 @@ public class Player
 
 
     // TODO: Need to consider if this needs a full overhaul or just an adjustment to the priorities of save/pley clues
-    //  (look at the +4000 play boost for more thoughts on that)
     /* Order of Magnitude:
      *  - Do you NEED to give this clue (is it a clue? is it a critical/playable on the chop? is there another player without a guaranteed play between you and the player to be clued?)
      *  - Is this a play action?
@@ -526,17 +526,11 @@ public class Player
                 else if (clueType == ClueType.FIVE_SAVE)
                     priority += 5000;
 
-                //TODO: this should only boost when the player ALSO has a save clue enumerated for them, as giving a play is better than a save
-                //increase the priority of a play clue if the player has no play actions currently
+                // increase the priority of a play clue if the player has no play actions currently and could be given a save clue
                 Player targetPlayer = game.players[clueAction.targetPlayer];
-                if (clueType == ClueType.PLAY && !game.players[clueAction.targetPlayer].hasPlayAction())
+                if (clueType == ClueType.PLAY && !game.players[clueAction.targetPlayer].hasPlayAction()
+                        && hasSaveClueForPlayer(clueAction.targetPlayer))
                     priority += 4000;
-                /*
-                if ((clueType.isSaveClue() || (clueType == ClueType.PLAY && isFocus(targetPlayer.hand, targetPlayer.hand[targetPlayer.chopPosition], clueAction.intendedClue)))
-                        && !game.players[clueAction.targetPlayer].hasPlayAction())
-                    priority += 4000;
-                 */
-
 
                 // do *I* need to give this save clue //TODO: more complicated analysis of if you need to give the clue
                 //that means the player that needs saving is next, or there will not be enough clues for the player prior
@@ -661,7 +655,7 @@ public class Player
                 if ((clue.clueType.isSaveClue() || clue.clueType == ClueType.DELAYED_PLAY) && game.isPlayable(clue))
                     clue.clueType = ClueType.PLAY;
 
-                //remove definitive clues if you can see all instances of the tile it is trying to save
+                //remove definitive clues if you can see all instances of the hinted tile
                 int numCanSee = game.numCanSee(this, new Tile(clue));
                 if (clue.isDefinitive() && ((clue.value == 1 && numCanSee == 3) || (clue.value == 5 && numCanSee == 1) || (numCanSee == 2)))
                     cluesToRemove.add(clue);
@@ -671,10 +665,6 @@ public class Player
                 for (String suit : clue.possibleSuits)
                 {
                     Tile inPlay = game.inPlay[Tile.suitIndex(suit)];
-
-                    //remove suit if it is complete
-                    if (inPlay != null && inPlay.value == 5)
-                        removeSuits.add(suit);
 
                     // for play clues - remove colours if they are no longer playable
                     if (clue.clueType == ClueType.PLAY && clue.value > 0 && inPlay != null && clue.value <= inPlay.value)
@@ -703,6 +693,7 @@ public class Player
             tile.information.removeAll(cluesToRemove);
             tile.information.addAll(cluesToAdd);
 
+            // this groups all clues of the same type and value into one clue with cumulative possibleSuits
             cluesToAdd = new ArrayList<>();
             cluesToRemove = new ArrayList<>();
             ArrayList<Clue> cluesByType;
@@ -759,6 +750,15 @@ public class Player
         }
 
         return true;
+    }
+
+    private boolean hasSaveClueForPlayer(int targetPlayer)
+    {
+        for (Action action : possibleActions)
+            if (action instanceof ClueAction clueAction && clueAction.targetPlayer == targetPlayer
+                    && clueAction.intendedClue.clueType.isSaveClue())
+                return true;
+        return false;
     }
 
     private boolean isGoodTouch(Tile[] hand, int playerIndex, Clue clue)

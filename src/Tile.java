@@ -205,20 +205,6 @@ public class Tile implements Comparable<Tile>
         return tile.toString();
     }
 
-    //TODO: check if tile update method in Player is already doing this, if so, can it be replaced with this method, if not, then remove this
-    public void updateIdentityFromNegativeInformation()
-    {
-        if (!hintedIdentity.suit.isBlank())
-            negativeSuitInformation = new HashSet<>();
-        if (hintedIdentity.value != 0)
-            negativeValueInformation = new HashSet<>();
-
-        if (hintedIdentity.suit.isBlank() && negativeSuitInformation.size() == 4)
-            hintedIdentity.suit = CollectionUtils.disjunction(List.of(SUIT_INDEX), negativeSuitInformation).iterator().next();
-        if (hintedIdentity.value == 0 && negativeValueInformation.size() == 4)
-            hintedIdentity.value = CollectionUtils.disjunction(List.of(ALL_VALUES), negativeValueInformation).iterator().next();
-    }
-
     private String printHintedIdentity()
     {
         String suit = (!hintedIdentity.suit.isBlank() ? hintedIdentity.suit : "-");
